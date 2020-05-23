@@ -151,6 +151,10 @@ Array.prototype.sortAlphabetically = function(fields)
     });
 };
 
+Array.prototype.unique = function(){
+    return this.filter((v, i, a) => a.indexOf(v) === i);
+}
+
 fs.readJSON = function(filename)
 {
     return eval('(' + fs.readFileSync(filename) + ')');
