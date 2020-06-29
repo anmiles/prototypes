@@ -85,6 +85,13 @@ String.prototype.pad = function(length, symbol, isPadLeft)
     return isPadLeft ? space + this : this + space;
 };
 
+Number.prototype.case = function(zero, one, two) {
+    const words = typeof arguments[0] === 'object' ? arguments[0] : arguments;
+    const cases = [0, 1, 2, 2, 2, 0, 0, 0, 0, 0];
+    const index = ((this - (this % 10)) / 10) % 10 === 1 ? 0 : cases[this % 10];
+    return words[index];
+};
+
 Number.prototype.pad = function(beforePoint, afterPoint)
 {
     var arr = this.toString().split('.');
@@ -160,9 +167,9 @@ fs.readJSON = function(filename)
     return eval('(' + fs.readFileSync(filename) + ')');
 };
 
-fs.writeJSON = function(filename, val, depth)
+fs.writeJSON = function(filename, val)
 {
-    fs.writeFileSync(filename, '\ufeff' + JSON.beautify(val, null, depth));
+    fs.writeFileSync(filename, '\ufeff' + JSON.stringify(val, null, '    '));
 };
 
 fs.getCallerFile = function()
