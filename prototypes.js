@@ -4,21 +4,18 @@ var spawn = require('child_process').spawn;
 var http = require('http');
 var extend = require('extend');
 
-String.prototype.format = function()
-{
+String.prototype.format = function() {
     if (arguments.length === 0) return this;
-
+    
     var data;
     if (arguments.length > 1) data = arguments;
-    else if (typeof arguments[0] == 'object') data = arguments[0];
+    else if (typeof arguments[0] === 'object') data = arguments[0];
     else data = arguments;
-
-    return this.split('{{').map(function(q)
-    {
-        return q.replace(/\{([^\{\}]+)\}/g, function ($0, $1)
-            {
-                return data[$1];
-            });
+    
+    return this.split('{{').map(function(q) {
+        return q.replace(/\{([^\{\}]+)\}/g, function($0, $1) {
+            return data[$1] === undefined || data[$1] === null ? '' : data[$1];
+        });
     }).join('{').replace(/\}\}/g, '}');
 };
 
