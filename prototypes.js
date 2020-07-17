@@ -157,8 +157,51 @@ Array.prototype.sortAlphabetically = function(fields)
 
 Array.prototype.unique = function(){
     return this.filter((v, i, a) => a.indexOf(v) === i);
-}
+};
 
+(function(sort) {
+    Array.prototype.sort = function(...fields) {
+        if (typeof fields[0] === 'function') return sort.call(this, ...fields);
+        
+        return this.sort((item1, item2) => {
+            for (let field of fields) {
+                let asc = true;
+                let options = {};
+                
+                if (typeof field === 'object') {
+                    options = field.options;
+                    asc = Object.values(field)[0];
+                    field = Object.keys(field)[0];
+                    delete options[field];
+                }
+                
+                let val1 = item1[field];
+                let val2 = item2[field];
+                
+                for (let opt in options) {
+                    if (typeof options[opt].find !== 'undefined') {
+                        val1 = val1.replace(options[opt].find, options[opt].replace);
+                        val2 = val2.replace(options[opt].find, options[opt].replace);
+                    }
+                }
+                
+                if (val2 < val1) return asc ? 1 : -1;
+                if (val2 > val1) return asc ? -1 : 1;
+            }
+            
+            return 0;
+        });
+    };
+})(Array.prototype.sort);
+
+Array.prototype.asc = function(...fields) {
+    return this.orderBy(1, ...fields);
+};
+
+Array.prototype.desc = function(...fields) {
+    return this.orderBy(-1, ...fields);
+};
+    
 fs.readJSON = function(filename)
 {
     return eval('(' + fs.readFileSync(filename) + ')');
