@@ -183,10 +183,10 @@ Array.prototype.sum = function(){
                 }
                 
                 if (options.ignoreCase) {
-                    val1 = val1.toLowerCase();
-                    val2 = val2.toLowerCase();
+                    val1 = val1.toString().toLowerCase();
+                    val2 = val2.toString().toLowerCase();
                 }
-
+                
                 if (options.find) {
                     val1 = val1.toString().replace(options.find, options.replace);
                     val2 = val2.toString().replace(options.find, options.replace);
