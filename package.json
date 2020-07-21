@@ -1,0 +1,22 @@
+{
+    "version": "1.0.0",
+    "name": "prototypes",
+    "description": "",
+    "dependencies": {
+        "child_process": "latest",
+        "path": "latest",
+        "extend": "latest",
+        "http": "latest",
+        "fs": "latest"
+    },
+    "scripts": {
+        "es": "es-check es5 *.js",
+        "test": "node D:/node_modules/mocha/bin/mocha prototypes.test.js"
+    },
+    "author": "Anatoliy Oblauhov",
+    "license": "ISC",
+    "main": "prototypes.js",
+    "devDependencies": {
+        "es-check": "^5.1.0"
+    }
+}
