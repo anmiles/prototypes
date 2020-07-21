@@ -188,8 +188,8 @@ Array.prototype.sum = function(){
                 }
 
                 if (options.find) {
-                    val1 = val1.replace(options.find, options.replace);
-                    val2 = val2.replace(options.find, options.replace);
+                    val1 = val1.toString().replace(options.find, options.replace);
+                    val2 = val2.toString().replace(options.find, options.replace);
                 }
 
                 if (val2 < val1) return asc ? 1 : -1;
