@@ -19,6 +19,16 @@ String.prototype.format = function() {
     }).join('{').replace(/\}\}/g, '}');
 };
 
+String.prototype.toUpperFirstLetter = function() {
+    if (this.length === 0) return this;
+    return this[0].toUpperCase() + this.substring(1, this.length);
+};
+
+String.prototype.toLowerFirstLetter = function() {
+    if (this.length === 0) return this;
+    return this[0].toLowerCase() + this.substring(1, this.length);
+};
+
 String.prototype.repeat = function(count)
 {
     var output = [];
@@ -29,7 +39,7 @@ String.prototype.repeat = function(count)
     }
     
     return output.join('');
-}
+};
 
 String.prototype.regexEscape = function()
 {
@@ -41,9 +51,22 @@ String.prototype.htmlEscape = function()
     return this.replace(/[\u00A0-\u9999<>\&]/gim, function(i) {return '&#'+i.charCodeAt(0)+';'});
 };
 
-String.prototype.capitalize = function()
+String.prototype.pad = function(length, symbol, isPadLeft)
 {
-    return this[0].toUpperCase() + this.substring(1);
+    if (typeof length !== 'number') length = length.length;
+    if (typeof symbol === 'undefined') symbol = ' ';
+    else if (typeof symbol !== 'string') symbol = symbol.toString();
+    var diff = length - this.length;
+    if (diff < 0) return this;
+    
+    var space = '';
+    
+    for (var i = 0; i < diff; i += symbol.length)
+    {
+        space += symbol;
+    }
+    
+    return isPadLeft ? space + this : this + space;
 };
 
 String.prototype.downloadJSON = function(callback)
@@ -65,27 +88,10 @@ String.prototype.downloadJSON = function(callback)
     });
 };
 
-String.prototype.pad = function(length, symbol, isPadLeft)
-{
-    if (typeof length != 'number') length = length.length;
-    if (typeof symbol != 'string' || symbol.length === 0) symbol = ' ';
-    var diff = length - this.length;
-    if (diff < 0) return this;
-    
-    var space = '';
-    
-    for (var i = 0; i < diff; i ++)
-    {
-        space += symbol;
-    }
-    
-    return isPadLeft ? space + this : this + space;
-};
-
 Number.prototype.case = function(zero, one, two) {
-    const words = typeof arguments[0] === 'object' ? arguments[0] : arguments;
-    const cases = [0, 1, 2, 2, 2, 0, 0, 0, 0, 0];
-    const index = ((this - (this % 10)) / 10) % 10 === 1 ? 0 : cases[this % 10];
+    var words = typeof arguments[0] === 'object' ? arguments[0] : arguments;
+    var cases = [0, 1, 2, 2, 2, 0, 0, 0, 0, 0];
+    var index = ((this - (this % 10)) / 10) % 10 === 1 ? 0 : cases[this % 10];
     return words[index];
 };
 
@@ -116,81 +122,78 @@ Number.prototype.pad = function(beforePoint, afterPoint)
     return leftPart + rightPart;
 };
 
-Array.prototype.indexFieldOf = function(fields, searchElement, fromIndex)
-{
-    if (typeof fromIndex != 'number') fromIndex = 0;
-    if (typeof fields == 'undefined' || fields === null) fields = [];
-    if (typeof fields == 'string') fields = [fields];
+if (typeof Array.prototype.unique === 'undefined') {
+    Array.prototype.unique = function(){
+        return this.filter(function (value, index, self) {
+            return self.indexOf(value) === index;
+        });
+    };
+}
+
+Array.prototype.indexFieldOf = function(fields, searchTerm, skip) {
+    if (typeof skip !== 'number') skip = 0;
+    if (typeof fields === 'string') fields = [fields];
     
-    for (var i = Math.max(0, fromIndex); i < this.length; i ++)
-    {
+    for (var i = Math.max(0, skip); i < this.length; i ++) {
         var val = this[i];
-        for (var j = 0; j < fields.length; j ++)
-        {
+
+        for (var j = 0; j < fields.length; j ++) {
             val = val[fields[j]];
+            if (typeof val === 'undefined') break;
         }
         
-        if (val === searchElement) return i;
+        if (val === searchTerm) return i;
     }
     
     return -1;
 };
 
-Array.prototype.unique = function(){
-    return this.filter((v, i, a) => a.indexOf(v) === i);
+Array.prototype.sum = function(){
+    return this.reduce(function(a, b) {return a + b}, 0);
 };
 
-///
-// array.sort()
-// array.sort(false)
-// array.sort('a')
-// array.sort({a: false})
-// array.sort({a: true, options: [{find: /\d+/, replace: '[$1]'}]})
-// array.sort({a: false, options: [{ignoreCase: true}]})
-// array.sort(['a', {b: false}, c])
-// array.sort([{a: false, 'b', {c: true, options: [{ignoreCase: true}]}}])
-///
 (function(sort) {
-    Array.prototype.sort = function(...fields) {
-        if (typeof fields[0] === 'function') return sort.call(this, ...fields);
+    Array.prototype.sort = function() {
+        var fields = Array.prototype.slice.call(arguments);
+        if (typeof fields[0] === 'function') return sort.apply(this, fields);
         if (typeof fields[0] === 'boolean') fields = [{'': fields[0]}];
-        if (!Array.isArray(fields)) fields = [fields];
+        if (Array.isArray(fields[0])) fields = fields[0];
         
-        return this.sort((item1, item2) => {
-            for (let field of fields) {
-                let asc = true;
-                let options = {};
+        return this.sort(function(item1, item2) {
+            for (var i = 0; i < fields.length; i ++) {
+                var field = fields[i];
+                var asc = true;
+                var options = {};
+                var val1 = item1;
+                var val2 = item2;
                 
                 if (typeof field === 'object') {
-                    options = field.options;
+                    options = field;
                     asc = Object.values(field)[0];
                     field = Object.keys(field)[0];
-                    delete options[field];
                 }
-
+                
                 if (typeof field !== 'object') {
                     field = [field];
                 }
 
-                for (let f of field) if (f !== '') {
-                    item1 = item1[f];
-                    item2 = item2[f];
+                for (var j = 0; j < field.length; j ++) if (field[j] !== '') {
+                    val1 = val1[field[j]];
+                    val2 = val2[field[j]];
                 }
                 
-                for (let opt in options) {
-                    if (options[opt].ignoreCase) {
-                        item1 = item1.toLowerCase();
-                        item2 = item2.toLowerCase();
-                    }
+                if (options.ignoreCase) {
+                    val1 = val1.toLowerCase();
+                    val2 = val2.toLowerCase();
+                }
 
-                    if (typeof options[opt].find !== 'undefined') {
-                        item1 = item1.replace(options[opt].find, options[opt].replace);
-                        item2 = item2.replace(options[opt].find, options[opt].replace);
-                    }
+                if (options.find) {
+                    val1 = val1.replace(options.find, options.replace);
+                    val2 = val2.replace(options.find, options.replace);
                 }
-                
-                if (item2 < item1) return asc ? 1 : -1;
-                if (item2 > item1) return asc ? -1 : 1;
+
+                if (val2 < val1) return asc ? 1 : -1;
+                if (val2 > val1) return asc ? -1 : 1;
             }
 
             if (fields.length === 0) {
@@ -202,7 +205,7 @@ Array.prototype.unique = function(){
         });
     };
 })(Array.prototype.sort);
-    
+
 fs.readJSON = function(filename)
 {
     return eval('(' + fs.readFileSync(filename) + ')');
@@ -278,7 +281,7 @@ fs.ensureDirectory = function(directoryName)
 };
 
 fs.deleteFolderRecursive = function(path, keepRootDirectory) {
-    const ignores = ['.gitignore'];
+    var ignores = ['.gitignore'];
 
     if (!fs.existsSync(path)) {
         return;
