@@ -136,32 +136,25 @@ Array.prototype.indexFieldOf = function(fields, searchElement, fromIndex)
     return -1;
 };
 
-Array.prototype.sortAlphabetically = function(fields)
-{
-    if (typeof fields == 'undefined') fields = [];
-    if (typeof fields == 'string') fields = [fields];
-    
-    return this.sort(function(a, b)
-    {
-        for (var i = 0; i < fields.length; i ++)
-        {
-            a = a[fields[i]];
-            b = b[fields[i]];
-        }
-        
-        if (a < b) return -1;
-        if (a > b) return 1;
-        return 0;
-    });
-};
-
 Array.prototype.unique = function(){
     return this.filter((v, i, a) => a.indexOf(v) === i);
 };
 
+///
+// array.sort()
+// array.sort(false)
+// array.sort('a')
+// array.sort({a: false})
+// array.sort({a: true, options: [{find: /\d+/, replace: '[$1]'}]})
+// array.sort({a: false, options: [{ignoreCase: true}]})
+// array.sort(['a', {b: false}, c])
+// array.sort([{a: false, 'b', {c: true, options: [{ignoreCase: true}]}}])
+///
 (function(sort) {
     Array.prototype.sort = function(...fields) {
         if (typeof fields[0] === 'function') return sort.call(this, ...fields);
+        if (typeof fields[0] === 'boolean') fields = [{'': fields[0]}];
+        if (!Array.isArray(fields)) fields = [fields];
         
         return this.sort((item1, item2) => {
             for (let field of fields) {
@@ -174,33 +167,41 @@ Array.prototype.unique = function(){
                     field = Object.keys(field)[0];
                     delete options[field];
                 }
-                
-                let val1 = item1[field];
-                let val2 = item2[field];
+
+                if (typeof field !== 'object') {
+                    field = [field];
+                }
+
+                for (let f of field) if (f !== '') {
+                    item1 = item1[f];
+                    item2 = item2[f];
+                }
                 
                 for (let opt in options) {
+                    if (options[opt].ignoreCase) {
+                        item1 = item1.toLowerCase();
+                        item2 = item2.toLowerCase();
+                    }
+
                     if (typeof options[opt].find !== 'undefined') {
-                        val1 = val1.replace(options[opt].find, options[opt].replace);
-                        val2 = val2.replace(options[opt].find, options[opt].replace);
+                        item1 = item1.replace(options[opt].find, options[opt].replace);
+                        item2 = item2.replace(options[opt].find, options[opt].replace);
                     }
                 }
                 
-                if (val2 < val1) return asc ? 1 : -1;
-                if (val2 > val1) return asc ? -1 : 1;
+                if (item2 < item1) return asc ? 1 : -1;
+                if (item2 > item1) return asc ? -1 : 1;
+            }
+
+            if (fields.length === 0) {
+                if (item2 < item1) return 1;
+                if (item2 > item1) return -1;
             }
             
             return 0;
         });
     };
 })(Array.prototype.sort);
-
-Array.prototype.asc = function(...fields) {
-    return this.orderBy(1, ...fields);
-};
-
-Array.prototype.desc = function(...fields) {
-    return this.orderBy(-1, ...fields);
-};
     
 fs.readJSON = function(filename)
 {
