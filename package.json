@@ -7,7 +7,8 @@
         "path": "latest",
         "extend": "latest",
         "http": "latest",
-        "fs": "latest"
+        "fs": "latest",
+        "iconv-lite": "latest"
     },
     "scripts": {
         "es": "es-check es5 *.js",

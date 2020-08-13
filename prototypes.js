@@ -3,6 +3,7 @@ var path = require('path');
 var spawn = require('child_process').spawn;
 var http = require('http');
 var extend = require('extend');
+var iconv = require('iconv-lite');
 
 String.prototype.format = function() {
     if (arguments.length === 0) return this;
@@ -214,6 +215,34 @@ fs.readJSON = function(filename)
 fs.writeJSON = function(filename, val)
 {
     fs.writeFileSync(filename, '\ufeff' + JSON.stringify(val, null, '    '));
+};
+
+fs.readTSV = function(filename)
+{
+    const tsv = iconv.decode(fs.readFileSync(filename), 'cp1251');
+    const lines = tsv.trim().split('\r\n').map(line => line.split('\t'));
+
+    if (lines.length > 0) {
+        const header = lines.shift();
+        const arr = lines.map(line => line.reduce((obj, value, key) => {obj[header[key]] = value; return obj}, {}));
+        return arr;
+    }
+
+    return [];
+};
+
+fs.writeTSV = function(filename, arr)
+{
+    let tsv = '';
+
+    if (arr.length > 0) {
+        const header = Object.keys(arr[0]);
+        const lines = arr.map(item => header.map(field => item[field]));
+        lines.unshift(header);
+        tsv = lines.map(line => line.join('\t')).join('\r\n');
+    }
+
+    fs.writeFileSync(filename, iconv.encode(tsv, 'cp1251'));
 };
 
 fs.getCallerFile = function()
