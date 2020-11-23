@@ -2,6 +2,7 @@ var fs = require('fs');
 var path = require('path');
 var spawn = require('child_process').spawn;
 var http = require('http');
+var https = require('https');
 var extend = require('extend');
 var iconv = require('iconv-lite');
 
@@ -70,9 +71,12 @@ String.prototype.pad = function(length, symbol, isPadLeft)
     return isPadLeft ? space + this : this + space;
 };
 
-String.prototype.downloadJSON = function(callback)
+String.prototype.download = function(callback)
 {
-    http.get(this.toString(), function(res)
+    const url = this.toString();
+    const protocol = url.startsWith('https') ? https : http;
+
+    protocol.get(url, function(res)
     {
         var body = '';
 
@@ -83,9 +87,16 @@ String.prototype.downloadJSON = function(callback)
 
         res.on('end', function()
         {
-            var result = JSON.parse(body);
-            callback(result);
+            callback(body, res);
         });
+    });
+};
+
+String.prototype.downloadJSON = function(callback)
+{
+    this.download((body, res) => {
+        var result = JSON.parse(body);
+        callback(result, res);
     });
 };
 
