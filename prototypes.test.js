@@ -61,6 +61,12 @@ describe("prototypes", function() {
         });
     });
     
+    describe("String.prototype.urlEscape", function() {
+        it("replaces all non-alphanumeric characters with hyphen and converts to lowercase", function() {
+            assert.equal('HTML encoding - & < > \' " ; and also @ # $ % . ( ) ? [ ] { } \\ + ^ | * © § € ₤ &nbsp; &lt; &gt; 雨 É  ½ ∑ and so on א http://Z-._~/?#q[q]@!$&\'(4)*+,;=f123: end'.urlEscape(), 'html-encoding-and-also-nbsp-lt-gt-and-so-on-http-z-q-q-4-f123-end');
+        });
+    });
+    
     describe("String.prototype.pad", function() {
         it("adds symbol to the string until it's equal required length", function() {
             assert.equal('test'.pad(6, '_'), 'test__');
@@ -118,7 +124,7 @@ describe("prototypes", function() {
             assert.equal((2).case(['дней', 'день', 'дня']), 'дня');;
         });
     });
-
+    
     describe("Number.prototype.pad", function() {
         it("adds zeros to the left part until it's length is equal required", function() {
             assert.equal((100.5).pad(5), '00100.5');
@@ -130,7 +136,7 @@ describe("prototypes", function() {
             assert.equal((100).pad(4, 3), '0100.000');
         });
     });
-
+    
     describe("Array.prototype.unique", function() {
         it("removing duplicates", function() {
             assert.deepEqual([1, '2', 3, '2', 1].unique(), [1, '2', 3]);
@@ -140,7 +146,20 @@ describe("prototypes", function() {
             assert.notDeepEqual([1, '2', 3, 2, 1].unique(), [1, '2', 3]);
         });
     });
-
+    
+    describe("Array.prototype.equals", function() {
+        it("different length", function() {
+            assert.deepEqual([1, '2', 3].equals([1, '2']), false);
+        });
+        it("different item", function() {
+            assert.deepEqual([1, '2', 3].equals([1, '2', 4]), false);
+            assert.deepEqual([1, '2', 3].equals([1, '2', '3']), false);
+        });
+        it("equal items", function() {
+            assert.deepEqual([1, '2', 3].equals([1, '2', 3]), true);
+        });
+    });
+    
     describe("Array.prototype.indexFieldOf", function() {
         it("search the array of objects for an object that's field equals to specified term", function() {
             assert.equal([{'a': 2}, {'a': 3}, {'a': 5}, {'a': 3}].indexFieldOf('a', 3), 1);
