@@ -50,7 +50,12 @@ String.prototype.regexEscape = function()
 
 String.prototype.htmlEscape = function()
 {
-    return this.replace(/[\u00A0-\u9999<>\&]/gim, function(i) {return '&#'+i.charCodeAt(0)+';'});
+    return this.replace(/[\u00A0-\u9999<>\&]/gim, function(i) {return '&#' + i.charCodeAt(0) + ';'});
+};
+
+String.prototype.urlEscape = function()
+{
+    return this.replace(/([^A-Za-z0-9]+)/gim, '-').toLowerCase();
 };
 
 String.prototype.pad = function(length, symbol, isPadLeft)
@@ -135,11 +140,20 @@ Number.prototype.pad = function(beforePoint, afterPoint)
 };
 
 if (typeof Array.prototype.unique === 'undefined') {
-    Array.prototype.unique = function(){
+    Array.prototype.unique = function() {
         return this.filter(function (value, index, self) {
             return self.indexOf(value) === index;
         });
     };
+}
+
+Array.prototype.equals = function(array) {
+    if (this.length !== array.length) return false;
+    
+    for (var i = 0; i < this.length; ++i) {
+        if (this[i] !== array[i]) return false;
+    }
+    return true;
 }
 
 Array.prototype.indexFieldOf = function(fields, searchTerm, skip) {
@@ -148,7 +162,7 @@ Array.prototype.indexFieldOf = function(fields, searchTerm, skip) {
     
     for (var i = Math.max(0, skip); i < this.length; i ++) {
         var val = this[i];
-
+        
         for (var j = 0; j < fields.length; j ++) {
             val = val[fields[j]];
             if (typeof val === 'undefined') break;
@@ -188,7 +202,7 @@ Array.prototype.sum = function(){
                 if (typeof field !== 'object') {
                     field = [field];
                 }
-
+                
                 for (var j = 0; j < field.length; j ++) if (field[j] !== '') {
                     val1 = val1[field[j]];
                     val2 = val2[field[j]];
@@ -203,11 +217,11 @@ Array.prototype.sum = function(){
                     val1 = val1.toString().replace(options.find, options.replace);
                     val2 = val2.toString().replace(options.find, options.replace);
                 }
-
+                
                 if (val2 < val1) return asc ? 1 : -1;
                 if (val2 > val1) return asc ? -1 : 1;
             }
-
+            
             if (fields.length === 0) {
                 if (item2 < item1) return 1;
                 if (item2 > item1) return -1;
