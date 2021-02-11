@@ -184,7 +184,7 @@ Array.prototype.sum = function(){
         if (typeof fields[0] === 'function') return sort.apply(this, fields);
         if (typeof fields[0] === 'boolean') fields = [{'': fields[0]}];
         if (Array.isArray(fields[0])) fields = fields[0];
-        
+
         return this.sort(function(item1, item2) {
             for (var i = 0; i < fields.length; i ++) {
                 var field = fields[i];
@@ -209,13 +209,13 @@ Array.prototype.sum = function(){
                 }
                 
                 if (options.ignoreCase) {
-                    val1 = val1.toString().toLowerCase();
-                    val2 = val2.toString().toLowerCase();
+                    val1 = (val1 || '').toString().toLowerCase();
+                    val2 = (val2 || '').toString().toLowerCase();
                 }
                 
                 if (options.find) {
-                    val1 = val1.toString().replace(options.find, options.replace);
-                    val2 = val2.toString().replace(options.find, options.replace);
+                    val1 = (val1 || '').toString().replace(options.find, options.replace);
+                    val2 = (val2 || '').toString().replace(options.find, options.replace);
                 }
                 
                 if (val2 < val1) return asc ? 1 : -1;

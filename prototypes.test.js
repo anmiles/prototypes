@@ -260,6 +260,19 @@ describe("prototypes", function() {
                 {'a': 'D', 'b': 'b'},
             ]);
         });
+        it("treats null as empty string with ignoreCase", function() {
+            assert.deepEqual([
+                {'a': 'D', 'b': 'b'},
+                {'a': 'D', 'b': null},
+                {'a': 'c', 'b': 'd'},
+                {'a': 'B', 'b': 'B'}
+            ].sort({b: false, ignoreCase: true}, {a: true}), [
+                {'a': 'c', 'b': 'd'},
+                {'a': 'B', 'b': 'B'},
+                {'a': 'D', 'b': 'b'},
+                {'a': 'D', 'b': null},
+            ]);
+        });
         it("use find and replace", function() {
             assert.deepEqual([
                 {'a': 'four', 'b': 'two'},
@@ -273,6 +286,18 @@ describe("prototypes", function() {
                 {'a': 'two', 'b': 'one'}
             ]);
         });
-        
+        it("treats null as empty string if find used", function() {
+            assert.deepEqual([
+                {'a': 'four', 'b': 'two'},
+                {'a': 'one', 'b': 'four'},
+                {'a': 'three', 'b': 'three'},
+                {'a': null, 'b': 'one'}
+            ].sort({a: true, find: 'four', replace: 'three'}, 'b'), [
+                {'a': null, 'b': 'one'},
+                {'a': 'one', 'b': 'four'},
+                {'a': 'three', 'b': 'three'},
+                {'a': 'four', 'b': 'two'},
+            ]);
+        });
     });
 });
