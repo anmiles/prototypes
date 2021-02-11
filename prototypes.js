@@ -334,25 +334,35 @@ fs.ensureDirectory = function(directoryName)
     return directoryName;
 };
 
-fs.deleteFolderRecursive = function(path, keepRootDirectory) {
-    var ignores = ['.gitignore'];
-
-    if (!fs.existsSync(path)) {
+fs.recurse = function(root, callback_file, callback_dir_before, callback_dir_after) {
+    if (!fs.existsSync(root)) {
         return;
     }
     
-    fs.readdirSync(path).forEach(function(file, index) {
-        var curPath = path + "/" + file;
+    fs.readdirSync(root).forEach(function(filename, index) {
+        var filepath = path.join(root, filename);
         
-        if (fs.lstatSync(curPath).isDirectory()) {
-            fs.deleteFolderRecursive(curPath);
+        if (fs.lstatSync(filepath).isDirectory()) {
+            if (callback_dir_before) callback_dir_before(filepath, filename);
+            fs.recurse(filepath, callback_file, callback_dir_before, callback_dir_after);
+            if (callback_dir_after) callback_dir_after(filepath, filename);
         } else {
-            if (ignores.indexOf(file) === -1) fs.unlinkSync(curPath);
+            if (callback_file) callback_file(filepath, filename);
         }
     });
+};
+
+fs.deleteFolderRecursive = function(root, deleteRoot) {
+    var ignores = ['.gitignore'];
     
-    if (keepRootDirectory) {
-        fs.rmdirSync(path);
+    fs.recurse(root, (filepath, filename) => {
+        if (ignores.indexOf(filename) === -1) fs.unlinkSync(filepath);
+    }, null, (filepath, filename) => {
+        fs.rmdirSync(filepath);
+    });
+    
+    if (deleteRoot) {
+        fs.rmdirSync(root);
     }
 };
 
