@@ -341,6 +341,8 @@ fs.recurse = function(root, callback_file, callback_dir_before, callback_dir_aft
     
     fs.readdirSync(root).forEach(function(filename, index) {
         var filepath = path.join(root, filename);
+
+        if (filename === 'System Volume Information') return;
         
         if (fs.lstatSync(filepath).isDirectory()) {
             if (callback_dir_before) callback_dir_before(filepath, filename);
