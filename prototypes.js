@@ -76,32 +76,47 @@ String.prototype.pad = function(length, symbol, isPadLeft)
     return isPadLeft ? space + this : this + space;
 };
 
-String.prototype.download = function(callback)
-{
+String.prototype.download = function(onSuccess, onError) {
     const url = this.toString();
     const protocol = url.startsWith('https') ? https : http;
 
-    protocol.get(url, function(res)
-    {
+    protocol.get(url, function(res) {
+        if (res.statusCode !== 200) {
+            onError(`Request to ${url} returned with status code: ${res.statusCode}`);
+            res.resume();
+            return;
+        }
+
         var body = '';
 
-        res.on('data', function(chunk)
-        {
+        res.on('data', function(chunk) {
             body += chunk;
         });
 
-        res.on('end', function()
-        {
-            callback(body, res);
+        res.on('end', function() {
+            onSuccess(body, res);
         });
+    }).on('error', (e) => {
+        onError(`Request to ${url} failed with error: ${e.message}`);
     });
 };
 
-String.prototype.downloadJSON = function(callback)
-{
+String.prototype.downloadAsync = async function() {
+    return new Promise((resolve, reject) => {
+        this.download(resolve, reject);
+    });
+};
+
+String.prototype.downloadJSON = function(onSuccess, onError) {
     this.download((body, res) => {
         var result = JSON.parse(body);
-        callback(result, res);
+        onSuccess(result, res);
+    }, onError);
+};
+
+String.prototype.downloadJSONAsync = async function() {
+    return new Promise((resolve, reject) => {
+        this.downloadJSON(resolve, reject);
     });
 };
 
