@@ -14,7 +14,7 @@
         "es": "es-check es5 *.js",
         "test": "node D:/node_modules/mocha/bin/mocha prototypes.test.js"
     },
-    "author": "Anatoliy Oblauhov",
+    "author": "Anatoliy Oblaukhov",
     "license": "ISC",
     "main": "prototypes.js",
     "devDependencies": {
