@@ -8,12 +8,12 @@ var iconv = require('iconv-lite');
 
 String.prototype.format = function() {
     if (arguments.length === 0) return this;
-    
+
     var data;
     if (arguments.length > 1) data = arguments;
     else if (typeof arguments[0] === 'object') data = arguments[0];
     else data = arguments;
-    
+
     return this.split('{{').map(function(q) {
         return q.replace(/\{([^\{\}]+)\}/g, function($0, $1) {
             return data[$1] === undefined || data[$1] === null ? '' : data[$1];
@@ -34,12 +34,12 @@ String.prototype.toLowerFirstLetter = function() {
 String.prototype.repeat = function(count)
 {
     var output = [];
-    
+
     for (var i = 0; i < count; i ++)
     {
         output.push(this);
     }
-    
+
     return output.join('');
 };
 
@@ -65,14 +65,14 @@ String.prototype.pad = function(length, symbol, isPadLeft)
     else if (typeof symbol !== 'string') symbol = symbol.toString();
     var diff = length - this.length;
     if (diff < 0) return this;
-    
+
     var space = '';
-    
+
     for (var i = 0; i < diff; i += symbol.length)
     {
         space += symbol;
     }
-    
+
     return isPadLeft ? space + this : this + space;
 };
 
@@ -132,25 +132,25 @@ Number.prototype.pad = function(beforePoint, afterPoint)
     var arr = this.toString().split('.');
     var leftPart = arr[0] ? arr[0] : '';
     var rightPart = arr[1] ? arr[1] : '';
-    
+
     var leftDiff = beforePoint - leftPart.length;
     var rightDiff = afterPoint - rightPart.length;
-    
+
     for (var i = 0; i < leftDiff; i ++)
     {
         leftPart = '0' + leftPart;
     }
-    
+
     for (var i = 0; i < rightDiff; i ++)
     {
         rightPart = rightPart + '0';
     }
-    
+
     if (rightPart.length > 0)
     {
         rightPart = "." + rightPart;
     }
-    
+
     return leftPart + rightPart;
 };
 
@@ -164,7 +164,7 @@ if (typeof Array.prototype.unique === 'undefined') {
 
 Array.prototype.equals = function(array) {
     if (this.length !== array.length) return false;
-    
+
     for (var i = 0; i < this.length; ++i) {
         if (this[i] !== array[i]) return false;
     }
@@ -174,18 +174,18 @@ Array.prototype.equals = function(array) {
 Array.prototype.indexFieldOf = function(fields, searchTerm, skip) {
     if (typeof skip !== 'number') skip = 0;
     if (typeof fields === 'string') fields = [fields];
-    
+
     for (var i = Math.max(0, skip); i < this.length; i ++) {
         var val = this[i];
-        
+
         for (var j = 0; j < fields.length; j ++) {
             val = val[fields[j]];
             if (typeof val === 'undefined') break;
         }
-        
+
         if (val === searchTerm) return i;
     }
-    
+
     return -1;
 };
 
@@ -207,41 +207,41 @@ Array.prototype.sum = function(){
                 var options = {};
                 var val1 = item1;
                 var val2 = item2;
-                
+
                 if (typeof field === 'object') {
                     options = field;
                     asc = Object.values(field)[0];
                     field = Object.keys(field)[0];
                 }
-                
+
                 if (typeof field !== 'object') {
                     field = [field];
                 }
-                
+
                 for (var j = 0; j < field.length; j ++) if (field[j] !== '') {
                     val1 = val1[field[j]];
                     val2 = val2[field[j]];
                 }
-                
+
                 if (options.ignoreCase) {
                     val1 = (val1 || '').toString().toLowerCase();
                     val2 = (val2 || '').toString().toLowerCase();
                 }
-                
+
                 if (options.find) {
                     val1 = (val1 || '').toString().replace(options.find, options.replace);
                     val2 = (val2 || '').toString().replace(options.find, options.replace);
                 }
-                
+
                 if (val2 < val1) return asc ? 1 : -1;
                 if (val2 > val1) return asc ? -1 : 1;
             }
-            
+
             if (fields.length === 0) {
                 if (item2 < item1) return 1;
                 if (item2 > item1) return -1;
             }
-            
+
             return 0;
         });
     };

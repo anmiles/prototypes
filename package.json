@@ -3,12 +3,8 @@
     "name": "prototypes",
     "description": "",
     "dependencies": {
-        "child_process": "latest",
-        "path": "latest",
-        "extend": "latest",
-        "http": "latest",
-        "fs": "latest",
-        "iconv-lite": "latest"
+        "extend": "^3.0.2",
+        "iconv-lite": "^0.6.3"
     },
     "scripts": {
         "es": "es-check es5 *.js",
@@ -18,6 +14,6 @@
     "license": "ISC",
     "main": "prototypes.js",
     "devDependencies": {
-        "es-check": "^5.1.0"
+        "es-check": "^7.0.1"
     }
 }
