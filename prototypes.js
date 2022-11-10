@@ -289,7 +289,7 @@ fs.getCallerFile = function()
 {
     var oldPrepareStackTrace = Error.prepareStackTrace;
     Error.prepareStackTrace = function (thisErr, stack) { return stack; };
-        
+
     try
     {
         var err = new Error();
@@ -310,7 +310,7 @@ fs.getCallerFile = function()
                     previous = true;
                     currentfile = callerfile;
                 }
-                
+
                 else
                 {
                     Error.prepareStackTrace = oldPrepareStackTrace;
@@ -320,7 +320,7 @@ fs.getCallerFile = function()
         }
     }
     catch (err) {}
-    
+
     Error.prepareStackTrace = oldPrepareStackTrace;
     return undefined;
 };
@@ -353,12 +353,12 @@ fs.recurse = function(root, callback_file, callback_dir_before, callback_dir_aft
     if (!fs.existsSync(root)) {
         return;
     }
-    
+
     fs.readdirSync(root).forEach(function(filename, index) {
         var filepath = path.join(root, filename);
 
         if (filename === 'System Volume Information') return;
-        
+
         if (fs.lstatSync(filepath).isDirectory()) {
             if (callback_dir_before) callback_dir_before(filepath, filename);
             fs.recurse(filepath, callback_file, callback_dir_before, callback_dir_after);
@@ -371,13 +371,13 @@ fs.recurse = function(root, callback_file, callback_dir_before, callback_dir_aft
 
 fs.deleteFolderRecursive = function(root, deleteRoot) {
     var ignores = ['.gitignore'];
-    
+
     fs.recurse(root, (filepath, filename) => {
         if (ignores.indexOf(filename) === -1) fs.unlinkSync(filepath);
     }, null, (filepath, filename) => {
         fs.rmdirSync(filepath);
     });
-    
+
     if (deleteRoot) {
         fs.rmdirSync(root);
     }
@@ -386,15 +386,15 @@ fs.deleteFolderRecursive = function(root, deleteRoot) {
 fs.findLastFile = function(dir, searchRegex)
 {
     dir = dir.replace(/(\/|\\)/g, path.sep);
-    
+
     var lastDirectory = '';
     var lastFile = '';
     var files = fs.readdirSync(dir);
-    
+
     for (var i = 0; i < files.length; i ++)
     {
         var fileStat = fs.lstatSync(dir + path.sep + files[i]);
-        
+
         if (fileStat.isDirectory() && files[i] > lastDirectory)
         {
             lastDirectory = files[i];
@@ -404,7 +404,7 @@ fs.findLastFile = function(dir, searchRegex)
             lastFile = files[i];
         }
     }
-    
+
     if (lastFile !== '')
     {
         return dir + path.sep + lastFile;
@@ -421,11 +421,11 @@ fs.findLastFile = function(dir, searchRegex)
 
 process.start = function(executable, args, options, output) {
     var defaultOptions = {
-        cwd: executable.indexOf(path.sep) !== -1 
-            ? fs.getDirectoryName(executable) 
+        cwd: executable.indexOf(path.sep) !== -1
+            ? fs.getDirectoryName(executable)
             : path.resolve("./")
     };
-    
+
     options = extend(defaultOptions, options || {});
 
     var defaultOutput = {
@@ -437,13 +437,13 @@ process.start = function(executable, args, options, output) {
     output = extend(defaultOutput, output || {});
 
     if (!args) args = [];
-    
+
     if (!executable.match(/\.exe$/))
     {
         args = ['Start-Process', '-WorkingDirectory', options.cwd, executable, args.map(arg => `"${arg}"`).join(',')];
         executable = 'powershell';
     }
-    
+
     if (output.debug)
     {
         console.log('command: {0}'.format(executable));
@@ -454,12 +454,12 @@ process.start = function(executable, args, options, output) {
 
     return new Promise(resolve => {
         var spawned = spawn(executable, args, options);
-        
+
         if (output.stdout) spawned.stdout.on('data', data => {
             console.log(data.toString());
             if (typeof output.stdout === "function") output.stdout(data.toString());
         });
-        
+
         if (output.stderr) spawned.stderr.on('data', data => {
             console.log(data.toString());
             if (typeof output.stderr === "function") output.stderr(data.toString());
