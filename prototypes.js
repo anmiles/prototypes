@@ -76,7 +76,7 @@ String.prototype.pad = function(length, symbol, isPadLeft)
     return isPadLeft ? space + this : this + space;
 };
 
-String.prototype.download = function(onSuccess, onError) {
+String.prototype.download = function(onSuccess, onError, encoding) {
     const url = this.toString();
     const protocol = url.startsWith('https') ? https : http;
 
@@ -87,13 +87,14 @@ String.prototype.download = function(onSuccess, onError) {
             return;
         }
 
-        var body = '';
+        const chunks = [];
 
         res.on('data', function(chunk) {
-            body += chunk;
+            chunks.push(chunk);
         });
 
         res.on('end', function() {
+            const body = iconv.decode(Buffer.concat(chunks), encoding);
             onSuccess(body, res);
         });
     }).on('error', (e) => {
