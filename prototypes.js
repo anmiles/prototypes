@@ -1,10 +1,10 @@
-var fs = require('fs');
-var path = require('path');
-var spawn = require('child_process').spawn;
-var http = require('http');
-var https = require('https');
-var extend = require('extend');
-var iconv = require('iconv-lite');
+const fs = require('fs');
+const path = require('path');
+const spawn = require('child_process').spawn;
+const http = require('http');
+const https = require('https');
+const extend = require('extend');
+const iconv = require('iconv-lite');
 
 String.prototype.format = function() {
     if (arguments.length === 0) return this;

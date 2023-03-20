@@ -1,7 +1,8 @@
-var mocha = require('mocha');
-var chai = require('chai');
-var assert = chai.assert;
-require('prototypes');
+const mocha = require('mocha');
+const chai = require('chai');
+require('./prototypes');
+
+const assert = chai.assert;
 
 describe("prototypes", function() {
     describe("String.prototype.format", function() {
