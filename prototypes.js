@@ -79,10 +79,15 @@ String.prototype.pad = function(length, symbol, isPadLeft)
 String.prototype.download = function(onSuccess, onError, encoding) {
     const url = this.toString();
     const protocol = url.startsWith('https') ? https : http;
+    const options = {
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36',
+        }
+    };
 
-    protocol.get(url, function(res) {
+    protocol.get(url, options, function(res) {
         if (res.statusCode !== 200) {
-            onError(`Request to ${url} returned with status code: ${res.statusCode}`);
+            onError && onError(`Request to ${url} returned with status code: ${res.statusCode}`);
             res.resume();
             return;
         }
@@ -94,17 +99,18 @@ String.prototype.download = function(onSuccess, onError, encoding) {
         });
 
         res.on('end', function() {
-            const body = iconv.decode(Buffer.concat(chunks), encoding);
-            onSuccess(body, res);
+            const buffer = Buffer.concat(chunks);
+            const body = encoding ? iconv.decode(buffer, encoding) : buffer;
+            onSuccess && onSuccess(body, res);
         });
     }).on('error', (e) => {
-        onError(`Request to ${url} failed with error: ${e.message}`);
+        onError && onError(`Request to ${url} failed with error: ${e.message}`);
     });
 };
 
-String.prototype.downloadAsync = async function() {
+String.prototype.downloadAsync = async function(encoding) {
     return new Promise((resolve, reject) => {
-        this.download(resolve, reject);
+        this.download(resolve, reject, encoding);
     });
 };
 
@@ -294,28 +300,28 @@ fs.getCallerFile = function()
     try
     {
         var err = new Error();
-        var callerfile;
-        var currentfile;
+        var callerFile;
+        var currentFile;
 
-        currentfile = err.stack.shift().getFileName();
+        currentFile = err.stack.shift().getFileName();
         var previous = false;
 
         while (err.stack.length)
         {
-            callerfile = err.stack.shift().getFileName();
+            callerFile = err.stack.shift().getFileName();
 
-            if (currentfile !== callerfile)
+            if (currentFile !== callerFile)
             {
                 if (!previous)
                 {
                     previous = true;
-                    currentfile = callerfile;
+                    currentFile = callerFile;
                 }
 
                 else
                 {
                     Error.prepareStackTrace = oldPrepareStackTrace;
-                    return callerfile;
+                    return callerFile;
                 }
             }
         }
@@ -350,22 +356,29 @@ fs.ensureDirectory = function(directoryName)
     return directoryName;
 };
 
-fs.recurse = function(root, callback_file, callback_dir_before, callback_dir_after) {
+fs.recurse = function(root, callbacks, depth = 0) {
     if (!fs.existsSync(root)) {
         return;
     }
 
-    fs.readdirSync(root).forEach(function(filename, index) {
-        var filepath = path.join(root, filename);
-
+    fs.readdirSync(root).forEach(function(filename) {
+        const filepath = path.join(root, filename);
         if (filename === 'System Volume Information') return;
+        if (!fs.existsSync(filepath)) return;
 
-        if (fs.lstatSync(filepath).isDirectory()) {
-            if (callback_dir_before) callback_dir_before(filepath, filename);
-            fs.recurse(filepath, callback_file, callback_dir_before, callback_dir_after);
-            if (callback_dir_after) callback_dir_after(filepath, filename);
-        } else {
-            if (callback_file) callback_file(filepath, filename);
+        const stat = fs.lstatSync(filepath);
+        const args = [filepath, filename, stat];
+        callbacks && typeof callbacks === 'function' && callbacks.apply(null, args);
+
+        if (stat.isDirectory()) {
+            callbacks && callbacks.dir && typeof callbacks.dir === 'function' && callbacks.dir.apply(null, args);
+            callbacks && callbacks.dir && typeof callbacks.dir.before === 'function' && callbacks.dir.before.apply(null, args);
+            depth === 1 || fs.recurse(filepath, callbacks, depth - 1);
+            callbacks && callbacks.dir && typeof callbacks.dir.after === 'function' && callbacks.dir.after.apply(null, args);
+        } else if (stat.isSymbolicLink()) {
+            callbacks && callbacks.lnk && typeof callbacks.lnk === 'function' && callbacks.lnk.apply(null, args);
+        } else if (stat.isFile()) {
+            callbacks && callbacks.file && typeof callbacks.file === 'function' && callbacks.file.apply(null, args);
         }
     });
 };
@@ -373,10 +386,9 @@ fs.recurse = function(root, callback_file, callback_dir_before, callback_dir_aft
 fs.deleteFolderRecursive = function(root, deleteRoot) {
     var ignores = ['.gitignore'];
 
-    fs.recurse(root, (filepath, filename) => {
-        if (ignores.indexOf(filename) === -1) fs.unlinkSync(filepath);
-    }, null, (filepath, filename) => {
-        fs.rmdirSync(filepath);
+    fs.recurse(root, {
+        file: (filepath, filename) => ignores.includes(filename) || fs.unlinkSync(filepath),
+        dir: { after: (filepath) => fs.rmdirSync(filepath) }
     });
 
     if (deleteRoot) {
