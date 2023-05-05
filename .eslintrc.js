@@ -4,11 +4,13 @@ module.exports = {
 		'eslint:recommended',
 		'plugin:jest/recommended',
 	],
+	parser        : '@typescript-eslint/parser',
 	parserOptions : {
 		ecmaVersion : 2019,
 		sourceType  : 'module',
 	},
 	plugins : [
+		'@typescript-eslint',
 		'align-assignments',
 		'import',
 		'jest',
@@ -20,9 +22,12 @@ module.exports = {
 	ignorePatterns : [
 		'**/node_modules/',
 		'coverage/',
+		'dist/',
 	],
 	rules : {
 		'no-unused-vars'                      : [ 'off' ],
+		'@typescript-eslint/no-redeclare'     : [ 'error' ],
+		'@typescript-eslint/no-unused-vars'   : [ 'error' ],
 		'align-assignments/align-assignments' : [ 'error' ],
 		'array-bracket-spacing'               : [ 'error', 'always' ],
 		'arrow-body-style'                    : [ 'error' ],
@@ -57,6 +62,7 @@ module.exports = {
 		'no-loop-func'                        : [ 'error' ],
 		'no-mixed-spaces-and-tabs'            : [ 'error', 'smart-tabs' ],
 		'no-multiple-empty-lines'             : [ 'error', { max : 1, maxEOF : 1, maxBOF : 0 } ],
+		'no-redeclare'                        : [ 'off' ],
 		'no-return-await'                     : [ 'error' ],
 		'no-trailing-spaces'                  : [ 'error' ],
 		'no-useless-rename'                   : [ 'error' ],
@@ -68,7 +74,6 @@ module.exports = {
 		'operator-linebreak'                  : [ 'error', 'before' ],
 		'prefer-const'                        : [ 'error' ],
 		'prefer-numeric-literals'             : [ 'error' ],
-		'prefer-spread'                       : [ 'error' ],
 		'prefer-template'                     : [ 'error' ],
 		'quote-props'                         : [ 'error', 'consistent-as-needed' ],
 		'quotes'                              : [ 'error', 'single', { avoidEscape : true } ],
