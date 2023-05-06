@@ -4,14 +4,35 @@ Provides prototype extensions for native JS modules
 
 ----
 
-## [1.0.2](../../tags/v1.0.2) - 2023-05-06
-### Changed
-- Use shared eslint configuration
+## Number
 
-## [1.0.1](../../tags/v1.0.1) - 2023-05-06
-### Changed
-- Rephrased tests to use 'should' verb
+- `Number.prototype.case` - select russian case of countable entity by count
+- `Number.prototype.pad` - add leading or trailing zeros to number to fit specified number of digits
 
-## [1.0.0](../../tags/v1.0.0) - 2023-05-05
-### Changed
-- First release
+## String
+
+- `String.prototype.toUpperFirstLetter` - make first letter uppercase
+- `String.prototype.toLowerFirstLetter` - make first letter lowercase
+- `String.prototype.regexEscape` - escape regular expression
+- `String.prototype.htmlEscape` - escape HTML-sensitive string
+- `String.prototype.urlEscape` - escape string to make it URL-safe
+
+## Array
+
+- `Array.prototype.unique` - remove duplicates from array
+- `Array.prototype.equals` - compare two arrays item-by-item
+- `Array.prototype.indexFieldOf` - indexOf by value of nested key
+- `Array.prototype.sum` - sum all values in array
+- `Array.prototype.sort` - sort array by values of nested keys in various directions
+
+## fs
+
+- `fs.readJSON` - read and parse JSON from file
+- `fs.writeJSON` - write JSON to file
+- `fs.readTSV` - read and parse TSV from file
+- `fs.writeTSV` - write TSV to file
+- `fs.recurse` - recursively traverse directory for specified depth and apply callbacks for files, directories and links
+
+## process
+
+- `process.start` - run process in Windows environment and optionally output stdout/stderr or process them with custom functions
