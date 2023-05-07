@@ -3,8 +3,8 @@ import path from 'path';
 import iconv from 'iconv-lite';
 
 declare module 'fs' {
-	export function readJSON(filename: string): string;
-	export function writeJSON(filename: string, val: any): void;
+	export function readJSON<T = any>(filename: string): T;
+	export function writeJSON<T = any>(filename: string, json: T): void;
 
 	export function readTSV(filename: string): Array<Record<string, any>>;
 	export function writeTSV(filename: string, data: Array<Record<string, any>>): void;
