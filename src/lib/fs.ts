@@ -13,11 +13,11 @@ declare module 'fs' {
 	export function recurse(root: string, callbacks: { dir?: FSCallback, file?: FSCallback, link?: FSCallback }, depth?: number): void;
 }
 
-fs.readJSON = function(filename: string): string {
+fs.readJSON = function<T = any>(filename: string): T {
 	return JSON.parse(fs.readFileSync(filename).toString());
 };
 
-fs.writeJSON = function(filename: string, json: any): void {
+fs.writeJSON = function<T = any>(filename: string, json: T): void {
 	fs.writeFileSync(filename, `\ufeff${JSON.stringify(json, null, '    ')}`);
 };
 
