@@ -4,12 +4,16 @@ Provides prototype extensions for native JS modules
 
 ----
 
-## Number
+## Installation
+`npm install @anmiles/prototypes`
+
+## Usage
+### Number
 
 - `Number.prototype.case` - select russian case of countable entity by count
 - `Number.prototype.pad` - add leading or trailing zeros to number to fit specified number of digits
 
-## String
+### String
 
 - `String.prototype.toUpperFirstLetter` - make first letter uppercase
 - `String.prototype.toLowerFirstLetter` - make first letter lowercase
@@ -17,7 +21,7 @@ Provides prototype extensions for native JS modules
 - `String.prototype.htmlEscape` - escape HTML-sensitive string
 - `String.prototype.urlEscape` - escape string to make it URL-safe
 
-## Array
+### Array
 
 - `Array.prototype.unique` - remove duplicates from array
 - `Array.prototype.equals` - compare two arrays item-by-item
@@ -25,7 +29,7 @@ Provides prototype extensions for native JS modules
 - `Array.prototype.sum` - sum all values in array
 - `Array.prototype.sort` - sort array by values of nested keys in various directions
 
-## fs
+### fs
 
 - `fs.readJSON` - read and parse JSON from file
 - `fs.writeJSON` - write JSON to file
@@ -33,6 +37,6 @@ Provides prototype extensions for native JS modules
 - `fs.writeTSV` - write TSV to file
 - `fs.recurse` - recursively traverse directory for specified depth and apply callbacks for files, directories and links
 
-## process
+### process
 
 - `process.start` - run process in Windows environment and optionally output stdout/stderr or process them with custom functions
