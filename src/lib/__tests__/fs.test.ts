@@ -12,7 +12,9 @@ jest.mock<Partial<typeof fs>>('fs', () => ({
 	readdirSync   : jest.fn(),
 	readFileSync  : jest.fn().mockImplementation(() => content),
 	mkdirSync     : jest.fn(),
-	writeFileSync : jest.fn(),
+	writeFileSync : jest.fn().mockImplementation((file: any, data: string) => {
+		content = Buffer.from(data);
+	}),
 }));
 
 jest.mock<Partial<typeof path>>('path', () => ({
@@ -134,6 +136,15 @@ describe('src/lib/fs', function() {
 			fs.writeJSON(filePath, json);
 
 			expect(fs.writeFileSync).toHaveBeenCalledWith(filePath, '\ufeff{\n    "key1": "value",\n    "key2": 5\n}');
+		});
+
+		it('should read written json back', () => {
+			const json = { key1 : 'value', key2 : 5 };
+
+			fs.writeJSON(filePath, json);
+			const result = fs.readJSON(filePath);
+
+			expect(result).toEqual(json);
 		});
 	});
 

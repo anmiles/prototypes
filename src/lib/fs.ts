@@ -44,7 +44,7 @@ fs.ensureFile = function(filePath: string): string {
 };
 
 fs.readJSON = function<T = any>(filename: string): T {
-	return JSON.parse(fs.readFileSync(filename).toString());
+	return JSON.parse(fs.readFileSync(filename).toString().replace('\ufeff', ''));
 };
 
 fs.writeJSON = function<T = any>(filename: string, json: T): void {
