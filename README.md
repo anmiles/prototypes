@@ -31,8 +31,12 @@ Provides prototype extensions for native JS modules
 
 ### fs
 
+- `fs.ensureDir` - check if dir exists and is directory or creates it
+- `fs.ensureFile` - check if file exists and is file or creates it
 - `fs.readJSON` - read and parse JSON from file
 - `fs.writeJSON` - write JSON to file
+- `fs.getJSON` - get JSON from file with falling back and validation
+- `fs.getJSONAsync` - asynchronously get JSON from file with asynchronous falling back and asynchronous validation
 - `fs.readTSV` - read and parse TSV from file
 - `fs.writeTSV` - write TSV to file
 - `fs.recurse` - recursively traverse directory for specified depth and apply callbacks for files, directories and links

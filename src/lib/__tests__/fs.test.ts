@@ -4,61 +4,313 @@ import iconv from 'iconv-lite';
 import '../fs';
 
 jest.mock<Partial<typeof fs>>('fs', () => ({
-	existsSync    : jest.fn(),
-	lstatSync     : jest.fn(),
+	existsSync : jest.fn().mockImplementation(() => exists),
+	lstatSync  : jest.fn().mockImplementation(() => ({
+		isFile      : () => isFile,
+		isDirectory : () => !isFile,
+	})),
 	readdirSync   : jest.fn(),
 	readFileSync  : jest.fn().mockImplementation(() => content),
+	mkdirSync     : jest.fn(),
 	writeFileSync : jest.fn(),
 }));
 
 jest.mock<Partial<typeof path>>('path', () => ({
-	join : jest.fn().mockImplementation((...paths: string[]) => paths.join('/')),
+	join    : jest.fn().mockImplementation((...paths: string[]) => paths.join('/')),
+	dirname : jest.fn().mockImplementation((arg) => arg.split('/').slice(0, -1).join('/')),
 }));
 
-const filename = 'filename';
+const dirPath  = 'dirPath';
+const filePath = 'dirPath/filePath';
 let content: Buffer;
+let exists: boolean;
+let isFile: boolean;
 
 describe('src/lib/fs', function() {
+	describe('ensureDir', () => {
+		beforeEach(() => {
+			isFile = false;
+		});
+
+		it('should create empty dir if not exists', () => {
+			exists = false;
+
+			fs.ensureDir(dirPath);
+
+			expect(fs.mkdirSync).toHaveBeenCalledWith(dirPath, { recursive : true });
+		});
+
+		it('should not create empty dir if already exists', () => {
+			exists = true;
+
+			fs.ensureDir(dirPath);
+
+			expect(fs.mkdirSync).not.toHaveBeenCalled();
+		});
+
+		it('should throw if existing is a file', () => {
+			exists = true;
+			isFile = true;
+
+			expect(() => fs.ensureDir(dirPath)).toThrow('dirPath is a file, not a directory');
+		});
+
+		it('should return dirPath', () => {
+			const result = fs.ensureDir(dirPath);
+
+			expect(result).toEqual(dirPath);
+		});
+	});
+
+	describe('ensureFile', () => {
+		let ensureDirSpy: jest.SpyInstance;
+
+		beforeAll(() => {
+			ensureDirSpy = jest.spyOn(fs, 'ensureDir');
+		});
+
+		beforeEach(() => {
+			ensureDirSpy.mockImplementation();
+			isFile = true;
+		});
+
+		afterAll(() => {
+			ensureDirSpy.mockRestore();
+		});
+
+		it('should ensure parent dir', () => {
+			exists = false;
+
+			fs.ensureFile(filePath);
+
+			expect(fs.ensureDir).toHaveBeenCalledWith('dirPath');
+		});
+
+		it('should create empty file if not exists', () => {
+			exists = false;
+
+			fs.ensureFile(filePath);
+
+			expect(fs.writeFileSync).toHaveBeenCalledWith(filePath, '');
+		});
+
+		it('should not create empty file if already exists', () => {
+			exists = true;
+
+			fs.ensureFile(filePath);
+
+			expect(fs.writeFileSync).not.toHaveBeenCalled();
+		});
+
+		it('should throw if existing is a file', () => {
+			exists = true;
+			isFile = false;
+
+			expect(() => fs.ensureFile(filePath)).toThrow('dirPath/filePath is a directory, not a file');
+			expect(fs.writeFileSync).not.toHaveBeenCalled();
+		});
+
+		it('should return filePath', () => {
+			const result = fs.ensureFile(filePath);
+
+			expect(result).toEqual(filePath);
+		});
+	});
+
 	describe('readJSON', function() {
 		it('should read json from file', () => {
 			content      = Buffer.from('{"key1": "value", "key2": 5}', 'utf8');
-			const result = fs.readJSON(filename);
+			const result = fs.readJSON(filePath);
+
 			expect(result).toEqual({ key1 : 'value', key2 : 5 });
-			expect(fs.readFileSync).toHaveBeenCalledWith(filename);
+			expect(fs.readFileSync).toHaveBeenCalledWith(filePath);
 		});
 	});
 
 	describe('writeJSON', function() {
 		it('should write json to file with BOM', () => {
 			const json = { key1 : 'value', key2 : 5 };
-			fs.writeJSON(filename, json);
-			expect(fs.writeFileSync).toHaveBeenCalledWith(filename, '\ufeff{\n    "key1": "value",\n    "key2": 5\n}');
+
+			fs.writeJSON(filePath, json);
+
+			expect(fs.writeFileSync).toHaveBeenCalledWith(filePath, '\ufeff{\n    "key1": "value",\n    "key2": 5\n}');
+		});
+	});
+
+	describe('getJSON', () => {
+		const json         = { key : 'value' };
+		const jsonString   = JSON.stringify(json, null, '    ');
+		const fallbackJSON = { fallbackKey : 'fallbackValue' };
+
+		const validateCallback      = jest.fn();
+		const validateCallbackAsync = jest.fn();
+
+		const createCallback      = jest.fn();
+		const createCallbackAsync = jest.fn();
+
+		let readJSONSpy: jest.SpyInstance;
+		let writeJSONSpy: jest.SpyInstance;
+
+		beforeAll(() => {
+			readJSONSpy  = jest.spyOn(fs, 'readJSON');
+			writeJSONSpy = jest.spyOn(fs, 'writeJSON');
+		});
+
+		afterAll(() => {
+			readJSONSpy.mockRestore();
+			writeJSONSpy.mockRestore();
+		});
+
+		beforeEach(() => {
+			content = iconv.encode(jsonString, 'utf8');
+
+			validateCallback.mockReturnValue(true);
+			validateCallbackAsync.mockResolvedValue(true);
+
+			createCallback.mockReturnValue(fallbackJSON);
+			createCallbackAsync.mockResolvedValue(fallbackJSON);
+		});
+
+		[ {
+			block : 'sync',
+			func  : async <T>(filename: string, createCallback: () => Exclude<T, Promise<any>>, validateCallback?: (json: T) => boolean) => fs.getJSON(filename, createCallback, validateCallback),
+			createCallback,
+			validateCallback,
+		}, {
+			block            : 'async',
+			func             : fs.getJSONAsync,
+			createCallback   : createCallbackAsync,
+			validateCallback : validateCallbackAsync,
+		} ].forEach(({ block, func, createCallback, validateCallback }) => {
+			describe(`${block}`, () => {
+				it('should read json and validate it if file exists', async () => {
+					exists = true;
+
+					await func(filePath, createCallback, validateCallback);
+
+					expect(readJSONSpy).toHaveBeenCalledWith(filePath);
+					expect(validateCallback).toHaveBeenCalledWith(json);
+				});
+
+				it('should call createCallback if file exists but json is not valid', async () => {
+					exists = true;
+					validateCallback.mockReturnValueOnce(false);
+
+					await func(filePath, createCallback, validateCallback);
+
+					expect(readJSONSpy).toHaveBeenCalledWith(filePath);
+					expect(createCallback).toHaveBeenCalledWith();
+				});
+
+				it('should not call createCallback if file exists and validation function is not passed', async () => {
+					exists = true;
+
+					await func(filePath, createCallback);
+
+					expect(readJSONSpy).toHaveBeenCalledWith(filePath);
+					expect(createCallback).not.toHaveBeenCalled();
+				});
+
+				it('should call createCallback if file does not exist', async () => {
+					exists = false;
+
+					await func(filePath, createCallback, validateCallback);
+
+					expect(readJSONSpy).not.toHaveBeenCalled();
+					expect(createCallback).toHaveBeenCalledWith();
+				});
+
+				it('should not write fallback JSON back if file exists and json is valid', async () => {
+					exists = true;
+
+					await func(filePath, createCallback, validateCallback);
+
+					expect(writeJSONSpy).not.toHaveBeenCalled();
+				});
+
+				it('should write fallback JSON back if file exists but json is not valid', async () => {
+					exists = true;
+					validateCallback.mockReturnValueOnce(false);
+
+					await func(filePath, createCallback, validateCallback);
+
+					expect(writeJSONSpy).toHaveBeenCalledWith(filePath, fallbackJSON);
+				});
+
+				it('should write fallback JSON back if file not exists', async () => {
+					exists = false;
+
+					await func(filePath, createCallback, validateCallback);
+
+					expect(writeJSONSpy).toHaveBeenCalledWith(filePath, fallbackJSON);
+				});
+
+				it('should return JSON if file exists and json is valid', async () => {
+					exists = true;
+
+					const result = await func(filePath, createCallback, validateCallback);
+
+					expect(result).toEqual(json);
+				});
+
+				it('should return fallback JSON if file exists but json is not valid', async () => {
+					exists = true;
+					validateCallback.mockReturnValueOnce(false);
+
+					const result = await func(filePath, createCallback, validateCallback);
+
+					expect(result).toEqual(fallbackJSON);
+				});
+
+				it('should return fallback JSON if file not exists', async () => {
+					exists = false;
+
+					const result = await func(filePath, createCallback, validateCallback);
+
+					expect(result).toEqual(fallbackJSON);
+				});
+
+				it('should throw if file exists but json is not valid and created json is not valid too', async () => {
+					exists = false;
+					validateCallback.mockReturnValue(false);
+
+					await expect(() => func(filePath, createCallback, validateCallback)).rejects.toEqual('Failed validation check for json that just created json for dirPath/filePath');
+
+					expect(writeJSONSpy).not.toHaveBeenCalled();
+				});
+			});
 		});
 	});
 
 	describe('readTSV', function() {
 		it('should read tsv from file with cp1251 encoding', () => {
-			content      = iconv.encode('first name\tage\tdescription\r\nAlice\t25\tEntertainer\r\nJohn\t40\tSpecial guest\r\n', 'cp1251');
-			const result = fs.readTSV(filename);
+			content = iconv.encode('first name\tage\tdescription\r\nAlice\t25\tEntertainer\r\nJohn\t40\tSpecial guest\r\n', 'cp1251');
+
+			const result = fs.readTSV(filePath);
+
 			expect(result).toEqual([
 				{ 'first name' : 'Alice', 'age' : '25', 'description' : 'Entertainer' },
 				{ 'first name' : 'John', 'age' : '40', 'description' : 'Special guest' },
 			]);
-			expect(fs.readFileSync).toHaveBeenCalledWith(filename);
+			expect(fs.readFileSync).toHaveBeenCalledWith(filePath);
 		});
 
 		it('should return empty array if file contains only headers', () => {
-			content      = iconv.encode('first name\tage\tdescription\r\n', 'cp1251');
-			const result = fs.readTSV(filename);
+			content = iconv.encode('first name\tage\tdescription\r\n', 'cp1251');
+
+			const result = fs.readTSV(filePath);
+
 			expect(result).toEqual([]);
-			expect(fs.readFileSync).toHaveBeenCalledWith(filename);
+			expect(fs.readFileSync).toHaveBeenCalledWith(filePath);
 		});
 
 		it('should return empty array if file is empty', () => {
-			content      = iconv.encode('', 'cp1251');
-			const result = fs.readTSV(filename);
+			content = iconv.encode('', 'cp1251');
+
+			const result = fs.readTSV(filePath);
+
 			expect(result).toEqual([]);
-			expect(fs.readFileSync).toHaveBeenCalledWith(filename);
+			expect(fs.readFileSync).toHaveBeenCalledWith(filePath);
 		});
 	});
 
@@ -70,14 +322,17 @@ describe('src/lib/fs', function() {
 				{ 'first name' : 'John', 'age' : '40', 'description' : 'Special guest' },
 			];
 
-			fs.writeTSV(filename, data);
-			expect(fs.writeFileSync).toHaveBeenCalledWith(filename, iconv.encode('first name\tage\tdescription\r\nAlice\t25\tEntertainer\r\nJohn\t40\tSpecial guest', 'cp1251'));
+			fs.writeTSV(filePath, data);
+
+			expect(fs.writeFileSync).toHaveBeenCalledWith(filePath, iconv.encode('first name\tage\tdescription\r\nAlice\t25\tEntertainer\r\nJohn\t40\tSpecial guest', 'cp1251'));
 		});
 
 		it('should write empty buffer into file if no data', () => {
 			const data: Record<string, any>[] = [];
-			fs.writeTSV(filename, data);
-			expect(fs.writeFileSync).toHaveBeenCalledWith(filename, iconv.encode('', 'cp1251'));
+
+			fs.writeTSV(filePath, data);
+
+			expect(fs.writeFileSync).toHaveBeenCalledWith(filePath, iconv.encode('', 'cp1251'));
 		});
 	});
 
@@ -277,6 +532,7 @@ describe('src/lib/fs', function() {
 
 		it('should not apply callback to itself', () => {
 			fs.recurse('C:/ProgramData', callbacks.file);
+
 			expect(callbacks.file).not.toHaveBeenCalledWith('C:/ProgramData', 'ProgramData', expect.anything());
 		});
 
@@ -295,6 +551,7 @@ describe('src/lib/fs', function() {
 
 		it('should not process System Volume Information', () => {
 			fs.recurse('C:', callbacks.file);
+
 			expect(readdirSyncSpy).not.toHaveBeenCalledWith('C:/System Volume Information');
 		});
 

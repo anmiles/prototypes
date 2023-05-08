@@ -3,8 +3,14 @@ import path from 'path';
 import iconv from 'iconv-lite';
 
 declare module 'fs' {
+	export function ensureDir(dirPath: string): string;
+	export function ensureFile(dirPath: string): string;
+
 	export function readJSON<T = any>(filename: string): T;
 	export function writeJSON<T = any>(filename: string, json: T): void;
+
+	export function getJSON<T = any>(filename: string, createCallback: () => Exclude<T, Promise<any>>, validateCallback?: (json: T) => boolean): T;
+	export function getJSONAsync<T = any>(filename: string, createCallback: () => Promise<T>, validateCallback?: (json: T) => Promise<boolean>): Promise<T>;
 
 	export function readTSV(filename: string): Array<Record<string, any>>;
 	export function writeTSV(filename: string, data: Array<Record<string, any>>): void;
@@ -13,12 +19,74 @@ declare module 'fs' {
 	export function recurse(root: string, callbacks: { dir?: FSCallback, file?: FSCallback, link?: FSCallback }, depth?: number): void;
 }
 
+fs.ensureDir = function(dirPath: string): string {
+	if (!fs.existsSync(dirPath)) {
+		fs.mkdirSync(dirPath, { recursive : true });
+	} else {
+		if (fs.lstatSync(dirPath).isFile()) {
+			throw `${dirPath} is a file, not a directory`;
+		}
+	}
+	return dirPath;
+};
+
+fs.ensureFile = function(filePath: string): string {
+	fs.ensureDir(path.dirname(filePath));
+
+	if (!fs.existsSync(filePath)) {
+		fs.writeFileSync(filePath, '');
+	} else {
+		if (fs.lstatSync(filePath).isDirectory()) {
+			throw `${filePath} is a directory, not a file`;
+		}
+	}
+	return filePath;
+};
+
 fs.readJSON = function<T = any>(filename: string): T {
 	return JSON.parse(fs.readFileSync(filename).toString());
 };
 
 fs.writeJSON = function<T = any>(filename: string, json: T): void {
 	fs.writeFileSync(filename, `\ufeff${JSON.stringify(json, null, '    ')}`);
+};
+
+fs.getJSON = function<T = any>(filename: string, createCallback: () => Exclude<T, Promise<any>>, validateCallback: (json: T) => boolean = () => true): T {
+	if (fs.existsSync(filename)) {
+		const json = fs.readJSON<T>(filename);
+
+		if (validateCallback(json)) {
+			return json;
+		}
+	}
+
+	const json = createCallback();
+
+	if (validateCallback(json)) {
+		fs.writeJSON(filename, json);
+		return json;
+	}
+
+	throw `Failed validation check for json that just created json for ${filename}`;
+};
+
+fs.getJSONAsync = async function<T>(filename: string, createCallback: () => Promise<T>, validateCallback: (json: T) => Promise<boolean> = async () => true): Promise<T> {
+	if (fs.existsSync(filename)) {
+		const json = fs.readJSON<T>(filename);
+
+		if (await validateCallback(json)) {
+			return json;
+		}
+	}
+
+	const json = await createCallback();
+
+	if (await validateCallback(json)) {
+		fs.writeJSON(filename, json);
+		return json;
+	}
+
+	throw `Failed validation check for json that just created json for ${filename}`;
 };
 
 fs.readTSV = function(filename: string): Array<Record<string, any>> {
