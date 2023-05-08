@@ -9,8 +9,8 @@ declare module 'fs' {
 	export function readJSON<T = any>(filename: string): T;
 	export function writeJSON<T = any>(filename: string, json: T): void;
 
-	export function getJSON<T = any>(filename: string, createCallback: () => Exclude<T, Promise<any>>, validateCallback?: (json: T) => boolean): T;
-	export function getJSONAsync<T = any>(filename: string, createCallback: () => Promise<T>, validateCallback?: (json: T) => Promise<boolean>): Promise<T>;
+	export function getJSON<T = any>(filename: string, createCallback: () => Exclude<T, Promise<any>>, validateCallback?: (json: T) => { isValid: boolean, validationError?: string }): T;
+	export function getJSONAsync<T = any>(filename: string, createCallback: () => Promise<T>, validateCallback?: (json: T) => Promise<{ isValid: boolean, validationError?: string }>): Promise<T>;
 
 	export function readTSV(filename: string): Array<Record<string, any>>;
 	export function writeTSV(filename: string, data: Array<Record<string, any>>): void;
@@ -51,42 +51,48 @@ fs.writeJSON = function<T = any>(filename: string, json: T): void {
 	fs.writeFileSync(filename, `\ufeff${JSON.stringify(json, null, '    ')}`);
 };
 
-fs.getJSON = function<T = any>(filename: string, createCallback: () => Exclude<T, Promise<any>>, validateCallback: (json: T) => boolean = () => true): T {
+fs.getJSON = function<T = any>(filename: string, createCallback: () => Exclude<T, Promise<any>>, validateCallback: (json: T) => { isValid: boolean, validationError?: string } = () => ({ isValid : true })): T {
 	if (fs.existsSync(filename)) {
-		const json = fs.readJSON<T>(filename);
+		const json        = fs.readJSON<T>(filename);
+		const { isValid } = validateCallback(json);
 
-		if (validateCallback(json)) {
+		if (isValid) {
 			return json;
 		}
 	}
 
-	const json = createCallback();
+	const json                         = createCallback();
+	const { isValid, validationError } = validateCallback(json);
 
-	if (validateCallback(json)) {
+	if (isValid) {
 		fs.writeJSON(filename, json);
 		return json;
 	}
 
-	throw `Failed validation check for json that just created json for ${filename}`;
+	const err = `JSON created for ${filename} is not valid`;
+	throw [ err, validationError ].filter((s) => s).join(': ');
 };
 
-fs.getJSONAsync = async function<T>(filename: string, createCallback: () => Promise<T>, validateCallback: (json: T) => Promise<boolean> = async () => true): Promise<T> {
+fs.getJSONAsync = async function<T>(filename: string, createCallback: () => Promise<T>, validateCallback: (json: T) => Promise<{ isValid: boolean, validationError?: string }> = async () => ({ isValid : true })): Promise<T> {
 	if (fs.existsSync(filename)) {
-		const json = fs.readJSON<T>(filename);
+		const json        = fs.readJSON<T>(filename);
+		const { isValid } = await validateCallback(json);
 
-		if (await validateCallback(json)) {
+		if (isValid) {
 			return json;
 		}
 	}
 
-	const json = await createCallback();
+	const json                         = await createCallback();
+	const { isValid, validationError } = await validateCallback(json);
 
-	if (await validateCallback(json)) {
+	if (isValid) {
 		fs.writeJSON(filename, json);
 		return json;
 	}
 
-	throw `Failed validation check for json that just created json for ${filename}`;
+	const err = `JSON created for ${filename} is not valid`;
+	throw [ err, validationError ].filter((s) => s).join(': ');
 };
 
 fs.readTSV = function(filename: string): Array<Record<string, any>> {

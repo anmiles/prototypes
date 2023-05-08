@@ -164,8 +164,8 @@ describe('src/lib/fs', function() {
 		beforeEach(() => {
 			content = iconv.encode(jsonString, 'utf8');
 
-			validateCallback.mockReturnValue(true);
-			validateCallbackAsync.mockResolvedValue(true);
+			validateCallback.mockReturnValue({ isValid : true });
+			validateCallbackAsync.mockResolvedValue({ isValid : true });
 
 			createCallback.mockReturnValue(fallbackJSON);
 			createCallbackAsync.mockResolvedValue(fallbackJSON);
@@ -173,7 +173,7 @@ describe('src/lib/fs', function() {
 
 		[ {
 			block : 'sync',
-			func  : async <T>(filename: string, createCallback: () => Exclude<T, Promise<any>>, validateCallback?: (json: T) => boolean) => fs.getJSON(filename, createCallback, validateCallback),
+			func  : async <T>(filename: string, createCallback: () => Exclude<T, Promise<any>>, validateCallback?: (json: T) => { isValid: boolean, validationError?: string }) => fs.getJSON(filename, createCallback, validateCallback),
 			createCallback,
 			validateCallback,
 		}, {
@@ -194,7 +194,7 @@ describe('src/lib/fs', function() {
 
 				it('should call createCallback if file exists but json is not valid', async () => {
 					exists = true;
-					validateCallback.mockReturnValueOnce(false);
+					validateCallback.mockReturnValueOnce({ isValid : false });
 
 					await func(filePath, createCallback, validateCallback);
 
@@ -230,7 +230,7 @@ describe('src/lib/fs', function() {
 
 				it('should write fallback JSON back if file exists but json is not valid', async () => {
 					exists = true;
-					validateCallback.mockReturnValueOnce(false);
+					validateCallback.mockReturnValueOnce({ isValid : false });
 
 					await func(filePath, createCallback, validateCallback);
 
@@ -255,7 +255,7 @@ describe('src/lib/fs', function() {
 
 				it('should return fallback JSON if file exists but json is not valid', async () => {
 					exists = true;
-					validateCallback.mockReturnValueOnce(false);
+					validateCallback.mockReturnValueOnce({ isValid : false });
 
 					const result = await func(filePath, createCallback, validateCallback);
 
@@ -272,9 +272,18 @@ describe('src/lib/fs', function() {
 
 				it('should throw if file exists but json is not valid and created json is not valid too', async () => {
 					exists = false;
-					validateCallback.mockReturnValue(false);
+					validateCallback.mockReturnValue({ isValid : false });
 
-					await expect(() => func(filePath, createCallback, validateCallback)).rejects.toEqual('Failed validation check for json that just created json for dirPath/filePath');
+					await expect(() => func(filePath, createCallback, validateCallback)).rejects.toEqual('JSON created for dirPath/filePath is not valid');
+
+					expect(writeJSONSpy).not.toHaveBeenCalled();
+				});
+
+				it('should throw with validation error if file exists but json is not valid and created json is not valid too', async () => {
+					exists = false;
+					validateCallback.mockReturnValue({ isValid : false, validationError : 'validation error' });
+
+					await expect(() => func(filePath, createCallback, validateCallback)).rejects.toEqual('JSON created for dirPath/filePath is not valid: validation error');
 
 					expect(writeJSONSpy).not.toHaveBeenCalled();
 				});
