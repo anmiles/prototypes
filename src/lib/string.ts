@@ -6,6 +6,7 @@ declare global {
 		htmlEscape(): string;
 		urlEscape(): string;
 		beautify(): string;
+		toFilename(): string;
 	}
 }
 
@@ -56,4 +57,15 @@ String.prototype.beautify = function() {
 		.replace('¾', '.75') // unify 3/4
 		.replace('²', '2') // unify 2
 		.replace('³', '3'); // unify 3
+};
+
+String.prototype.toFilename = function() {
+	return this.beautify()
+		.replace(/["/\\|*?"<>]/g, '') // strip forbidden symbols
+		.replace(/: /g, ' - ') // replace colon as word edge with hyphen
+		.replace(/:/g, '-') // replace colon as not a word edge with hyphen
+		.replace(/[-]+/g, '-') // collapse multiple hyphens
+		.normalize('NFD').replace(/(?<![ИиЕе])[\u0300-\u036f]/g, '') // unify accents from latin characters
+		.replace(/И\u0306/g, 'Й').replace(/и\u0306/g, 'й').replace(/Е\u0308/g, 'Ё').replace(/е\u0308/g, 'ё') // undo normalizing russian accents
+		.replace(/[^ A-Za-zА-Яа-яЁё0-9~!@#$%^&()\-=_+№[]{};',\.]/g, ''); // remove any other symbols
 };

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.1.0](../../tags/v2.1.0) - 2023-08-04
 ### Added
 - String.prototype.beautify unifies similar special symbols
+- String.prototype.toFilename converts string into a valid filename
 
 ## [2.0.2](../../tags/v2.0.2) - 2023-05-08
 ### Changed

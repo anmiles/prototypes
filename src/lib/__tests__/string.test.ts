@@ -46,4 +46,10 @@ describe('src/lib/string', function() {
 			expect(rawText.beautify()).toEqual('text ......------------\'\'\'"""""::.25.5.7523II/\\|*?<>a:b key: value ásseéèiiížЙйЁё,!_@&#%+=()[]「」【】°©👍💥😂首');
 		});
 	});
+
+	describe('toFilename', () => {
+		it('should cleanup text for using as a filename', () => {
+			expect(rawText.toFilename()).toEqual('text ......-\'\'\'-.25.5.7523IIa-b key - value asseeeiiizЙйЁё,!_@&#%+=()[]「」【】°©👍💥😂首');
+		});
+	});
 });
