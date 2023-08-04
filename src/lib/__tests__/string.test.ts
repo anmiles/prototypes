@@ -1,5 +1,7 @@
 import '../string';
 
+const rawText = 'text  ​‌&nbsp;.․。…·‐‑‒–—―•−⸺⸻・\'`’"«»“”:：¼½¾²³ІI/\\|*?<>a:b key: value áßeéèiіížЙйЁё,!_@&#%+=()[]「」【】°©👍💥😂首';
+
 describe('src/lib/string', function() {
 	describe('toUpperFirstLetter', function() {
 		it('should make first letter uppercase', function() {
@@ -36,6 +38,12 @@ describe('src/lib/string', function() {
 	describe('urlEscape', function() {
 		it('should replace all non-alphanumeric characters with hyphen and converts to lowercase', function() {
 			expect('HTML encoding - & < > \' " ; and also @ # $ % . ( ) ? [ ] { } \\ + ^ | * © § € ₤ &nbsp; &lt; &gt; 雨 É  ½ ∑ and so on א http://Z-._~/?#q[q]@!$&\'(4)*+,;=f123: end'.urlEscape()).toEqual('html-encoding-and-also-nbsp-lt-gt-and-so-on-http-z-q-q-4-f123-end');
+		});
+	});
+
+	describe('beautify', () => {
+		it('should beautify text by unifying similar special characters', () => {
+			expect(rawText.beautify()).toEqual('text ......------------\'\'\'"""""::.25.5.7523II/\\|*?<>a:b key: value ásseéèiiížЙйЁё,!_@&#%+=()[]「」【】°©👍💥😂首');
 		});
 	});
 });
