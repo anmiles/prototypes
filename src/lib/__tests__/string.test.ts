@@ -1,6 +1,6 @@
 import '../string';
 
-const rawText = ' text  ​‌&nbsp;․。…·‐‑‒–—―•−⸺⸻・\'`’"«»“”:：¼½¾²³ІI/\\ | *?<>a:b key: value áßeéèiіížЙйЁё,!_@&#%+=()[]「」【】°©👍💥😂首';
+const rawText = ' text  ​‌&nbsp;․。…·‐‑‒–—―•−⸺⸻・\'`’"«»“”:：¼½¾²³ІI/\\ | *?<>a:b key: value áßeéèiіížЙйЁё,!_@&#%+=()[]「」【】°©👍💥😂首…';
 
 describe('src/lib/string', function() {
 	describe('toUpperFirstLetter', function() {
@@ -43,13 +43,13 @@ describe('src/lib/string', function() {
 
 	describe('beautify', () => {
 		it('should beautify text by unifying similar special characters', () => {
-			expect(rawText.beautify()).toEqual(' text .....------------\'\'\'"""""::.25.5.7523II/\\ | *?<>a:b key: value ásseéèiiížЙйЁё,!_@&#%+=()[]「」【】°©👍💥😂首');
+			expect(rawText.beautify()).toEqual(' text .....------------\'\'\'"""""::.25.5.7523II/\\ | *?<>a:b key: value ásseéèiiížЙйЁё,!_@&#%+=()[]「」【】°©👍💥😂首...');
 		});
 	});
 
 	describe('toFilename', () => {
 		it('should cleanup text for using as a filename', () => {
-			expect(rawText.toFilename()).toEqual('text .-\'\'\'-.25.5.7523II- - a-b key - value asseeeiiizЙйЁё,!_@&#%+=()[]「」【】°©👍💥😂首');
+			expect(rawText.toFilename()).toEqual('text .....-\'\'\' -.25.5.7523II- - a-b key - value asseeeiiizЙйЁё,!_@&#%+=()[]「」【】°©👍💥😂首');
 		});
 	});
 });
