@@ -47,8 +47,13 @@ String.prototype.beautify = function() {
 		.replace(/[\u2026]/g, '...') // unify ellipsis
 		.replace(/[·\u00ad\u2010-\u2015\u2022\u2212\u2e3a-\u2e3b\u30fb-\u30fc]/g, '-') // unify hyphens
 		.replace(/[`’]/g, '\'') // unify apostrophes
-		.replace(/[«»“”]/g, '"') // unify quotes
+		.replace(/[«»“”＂]/g, '"') // unify quotes
 		.replace(/[\uff1a]/g, ':') // unify colons
+		.replace(/\uff1f/g, '?') // unify question marks
+		.replace(/\uff5c/g, '|') // unify vertical slashes
+		.replace(/\uff0a/g, '*') // unify asterisks
+		.replace(/\u29f8/g, '/') // unify slashes
+		.replace(/\u29f9/g, '\\') // unify backslashes
 		.replace(/\u0406/g, 'I') // unify I
 		.replace(/\u0456/g, 'i') // unify i
 		.replace('ß', 'ss') // unify double S
