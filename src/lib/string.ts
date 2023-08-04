@@ -61,11 +61,16 @@ String.prototype.beautify = function() {
 
 String.prototype.toFilename = function() {
 	return this.beautify()
-		.replace(/["/\\|*?"<>]/g, '') // strip forbidden symbols
+		.replace(/["/\\|]/g, '-') // replace slashes with hyphen
 		.replace(/: /g, ' - ') // replace colon as word edge with hyphen
 		.replace(/:/g, '-') // replace colon as not a word edge with hyphen
-		.replace(/[-]+/g, '-') // collapse multiple hyphens
 		.normalize('NFD').replace(/(?<![ИиЕе])[\u0300-\u036f]/g, '') // unify accents from latin characters
 		.replace(/И\u0306/g, 'Й').replace(/и\u0306/g, 'й').replace(/Е\u0308/g, 'Ё').replace(/е\u0308/g, 'ё') // undo normalizing russian accents
-		.replace(/[^ A-Za-zА-Яа-яЁё0-9~!@#$%^&()\-=_+№[]{};',\.]/g, ''); // remove any other symbols
+		.replace(/["*?"<>]/g, ' ') // remove other forbidden symbols
+		.replace(/[^ A-Za-zА-Яа-яЁё0-9~!@#$%^&()\-=_+№[]{};',\.]/g, '') // remove any other symbols
+		.replace(/\.\.\./g, '') // strip ellipsis
+		.replace(/[.]+/g, '.') // collapse multiple dots
+		.replace(/[-]+/g, '-') // collapse multiple hyphens
+		.replace(/\s+/g, ' ') // collapse multiple spaces
+		.trim(); // remove leading and trailing spaces
 };
