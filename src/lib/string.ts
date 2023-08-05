@@ -62,7 +62,8 @@ String.prototype.beautify = function() {
 		.replace('½', '.5') // unify 1/2
 		.replace('¾', '.75') // unify 3/4
 		.replace('²', '2') // unify 2
-		.replace('³', '3'); // unify 3
+		.replace('³', '3') // unify 3
+	;
 };
 
 String.prototype.toFilename = function() {
@@ -77,6 +78,9 @@ String.prototype.toFilename = function() {
 		.replace(/[^\d\p{L}'\u0020-\u007e\u00a1-\u00ff\u2100-\u214f]/gu, '') // remove any other symbols
 		.replace(/[-]+/g, '-') // collapse multiple hyphens
 		.replace(/\s+/g, ' ') // collapse multiple spaces
+		.replace(/\.\.\.[.]+/g, '...') // collapse dots after ellipsis
+		.replace(/\.\.\./g, '\u2026').replace(/[.]+/g, '.').replace(/\u2026/g, '...') // collapse double dots
 		.trim() // remove leading and trailing spaces
-		.replace(/[.]*$/g, ''); // strip trailing dots
+		.replace(/\.+$/g, '') // remove trailing dots
+	;
 };
