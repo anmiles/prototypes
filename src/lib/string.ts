@@ -81,6 +81,6 @@ String.prototype.toFilename = function() {
 		.replace(/\.\.\.[.]+/g, '...') // collapse dots after ellipsis
 		.replace(/\.\.\./g, '\u2026').replace(/[.]+/g, '.').replace(/\u2026/g, '...') // collapse double dots
 		.trim() // remove leading and trailing spaces
-		.replace(/\.+$/g, '') // remove trailing dots
+		.replace(/^\.+/g, '').replace(/\.+$/g, '') // remove leading and trailing dots
 	;
 };
