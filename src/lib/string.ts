@@ -42,7 +42,7 @@ String.prototype.urlEscape = function() {
 
 String.prototype.beautify = function() {
 	return this
-		.replace(/([\s\xa0\u200b\u200c]|&nbsp;)+/g, ' ') // unify spaces
+		.replace(/([\s\u00a0\u200b\u200c]|&nbsp;)+/g, ' ') // unify spaces
 		.replace(/[\u2024\u3002]/g, '.') // unify dots
 		.replace(/[\u2026]/g, '...') // unify ellipsis
 		.replace(/[·\u00ad\u2010-\u2015\u2022\u2212\u2e3a-\u2e3b\u30fb-\u30fc]/g, '-') // unify hyphens
@@ -54,6 +54,7 @@ String.prototype.beautify = function() {
 		.replace(/\uff0a/g, '*') // unify asterisks
 		.replace(/\u29f8/g, '/') // unify slashes
 		.replace(/\u29f9/g, '\\') // unify backslashes
+		.replace(/[「【]/g, '[').replace(/[」】]/g, ']') // unify square brackets
 		.replace(/\u0406/g, 'I') // unify I
 		.replace(/\u0456/g, 'i') // unify i
 		.replace('ß', 'ss') // unify double S
@@ -71,8 +72,9 @@ String.prototype.toFilename = function() {
 		.replace(/:/g, '-') // replace colon as not a word edge with hyphen
 		.normalize('NFD').replace(/(?<![ИиЕе])[\u0300-\u036f]/g, '') // unify accents from latin characters
 		.replace(/И\u0306/g, 'Й').replace(/и\u0306/g, 'й').replace(/Е\u0308/g, 'Ё').replace(/е\u0308/g, 'ё') // undo normalizing russian accents
+		// remove \ufe0f
 		.replace(/["*?<>]/g, ' ') // remove other forbidden symbols
-		.replace(/[^ A-Za-zА-Яа-яЁё0-9~!@#$%^&()\-=_+№[]{};',\.]/g, '') // remove any other symbols
+		.replace(/[^\d\p{L}'\u0020-\u007e\u00a1-\u00ff\u2100-\u214f]/gu, '') // remove any other symbols
 		.replace(/[-]+/g, '-') // collapse multiple hyphens
 		.replace(/\s+/g, ' ') // collapse multiple spaces
 		.trim() // remove leading and trailing spaces
