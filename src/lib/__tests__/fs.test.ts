@@ -438,38 +438,34 @@ describe('src/lib/fs', function() {
 
 		let readdirSyncSpy: jest.SpyInstance;
 		let existsSyncSpy: jest.SpyInstance;
-		let lstatSyncSpy: jest.SpyInstance;
 
 		beforeAll(() => {
 			readdirSyncSpy = jest.spyOn(fs, 'readdirSync');
 			existsSyncSpy  = jest.spyOn(fs, 'existsSync');
-			lstatSyncSpy   = jest.spyOn(fs, 'lstatSync');
 		});
 
 		beforeEach(() => {
-			readdirSyncSpy.mockImplementation((fullName: string) => {
+			readdirSyncSpy.mockImplementation((fullName: string, options?: { withFileTypes?: boolean }) => {
 				const fsDir: FSDir = allFiles[fullName];
 
 				return [
 					...(fsDir.dirs || []),
 					...(fsDir.files || []),
 					...(fsDir.links || []),
-				].map((item) => item.name);
+				].map((item) => options?.withFileTypes ? {
+					name           : item.name,
+					isFile         : () => allFiles[item.fullName || ''].type === 'file',
+					isDirectory    : () => allFiles[item.fullName || ''].type === 'dir',
+					isSymbolicLink : () => allFiles[item.fullName || ''].type === 'link',
+				} : item.name);
 			});
 
 			existsSyncSpy.mockImplementation((fullName: string) => Object.keys(allFiles).includes(fullName));
-
-			lstatSyncSpy.mockImplementation((fullName: string) => ({
-				isFile         : () => allFiles[fullName].type === 'file',
-				isDirectory    : () => allFiles[fullName].type === 'dir',
-				isSymbolicLink : () => allFiles[fullName].type === 'link',
-			}));
 		});
 
 		afterAll(() => {
 			readdirSyncSpy.mockRestore();
 			existsSyncSpy.mockRestore();
-			lstatSyncSpy.mockRestore();
 		});
 
 		describe('processAllFiles', () => {
@@ -560,13 +556,13 @@ describe('src/lib/fs', function() {
 			fs.recurse('C:', callbacks.file);
 
 			expect(readdirSyncSpy).toHaveBeenCalledTimes(7);
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:');
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/ProgramData');
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/ProgramData/MySoftware');
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users');
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users/Public');
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users/Public/Desktop');
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users/Public/Downloads');
+			expect(readdirSyncSpy).toHaveBeenCalledWith('C:', { withFileTypes : true });
+			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/ProgramData', { withFileTypes : true });
+			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/ProgramData/MySoftware', { withFileTypes : true });
+			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users', { withFileTypes : true });
+			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users/Public', { withFileTypes : true });
+			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users/Public/Desktop', { withFileTypes : true });
+			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users/Public/Downloads', { withFileTypes : true });
 		});
 
 		it('should not process System Volume Information', () => {
@@ -609,7 +605,7 @@ describe('src/lib/fs', function() {
 			fs.recurse('C:/Users', callbacks, 1);
 
 			expect(readdirSyncSpy).toHaveBeenCalledTimes(1);
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users');
+			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users', { withFileTypes : true });
 
 			expect(callbacks.dir).toHaveBeenCalledTimes(1);
 			expect(callbacks.dir).toHaveBeenCalledWith('C:/Users/Public', 'Public', expect.anything());
@@ -624,9 +620,9 @@ describe('src/lib/fs', function() {
 			fs.recurse('C:', callbacks, 2);
 
 			expect(readdirSyncSpy).toHaveBeenCalledTimes(3);
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:');
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/ProgramData');
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users');
+			expect(readdirSyncSpy).toHaveBeenCalledWith('C:', { withFileTypes : true });
+			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/ProgramData', { withFileTypes : true });
+			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users', { withFileTypes : true });
 
 			expect(callbacks.dir).toHaveBeenCalledTimes(4);
 			expect(callbacks.dir).toHaveBeenCalledWith('C:/ProgramData', 'ProgramData', expect.anything());

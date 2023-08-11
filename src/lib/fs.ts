@@ -118,7 +118,7 @@ fs.writeTSV = function(filename: string, data: Array<Record<string, any>>): void
 	fs.writeFileSync(filename, iconv.encode(tsv, 'cp1251'));
 };
 
-type FSCallback = (filepath: string, filename: string, stat: fs.Stats) => void;
+type FSCallback = (filepath: string, filename: string, dirent: fs.Dirent) => void;
 
 function recurse(root: string, callback: FSCallback, depth?: number): void;
 function recurse(root: string, callbacks: { dir?: FSCallback, file?: FSCallback, link?: FSCallback }, depth?: number): void;
@@ -131,22 +131,20 @@ function recurse(root: string, arg: FSCallback | { dir?: FSCallback, file?: FSCa
 		return recurse(root, { dir : arg, file : arg, link : arg });
 	}
 
-	for (const name of fs.readdirSync(root)) {
-		const fullName = path.join(root, name);
+	for (const dirent of fs.readdirSync(root, { withFileTypes : true })) {
+		const fullName = path.join(root, dirent.name);
 
-		if (name === 'System Volume Information') {
+		if (dirent.name === 'System Volume Information') {
 			continue;
 		}
 
-		const stat = fs.lstatSync(fullName);
-
-		if (stat.isDirectory()) {
-			arg.dir && arg.dir(fullName, name, stat);
+		if (dirent.isDirectory()) {
+			arg.dir && arg.dir(fullName, dirent.name, dirent);
 			depth === 1 || recurse(fullName, arg, depth - 1);
-		} else if (stat.isSymbolicLink()) {
-			arg.link && arg.link(fullName, name, stat);
-		} else if (stat.isFile()) {
-			arg.file && arg.file(fullName, name, stat);
+		} else if (dirent.isSymbolicLink()) {
+			arg.link && arg.link(fullName, dirent.name, dirent);
+		} else if (dirent.isFile()) {
+			arg.file && arg.file(fullName, dirent.name, dirent);
 		}
 	}
 }
