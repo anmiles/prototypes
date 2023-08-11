@@ -17,6 +17,8 @@ declare module 'fs' {
 
 	export function recurse(root: string, callback: FSCallback, depth?: number): void;
 	export function recurse(root: string, callbacks: { dir?: FSCallback, file?: FSCallback, link?: FSCallback }, depth?: number): void;
+
+	export function size(root: string, ignores?: string[]): number;
 }
 
 fs.ensureDir = function(dirPath: string): string {
@@ -150,5 +152,28 @@ function recurse(root: string, arg: FSCallback | { dir?: FSCallback, file?: FSCa
 }
 
 fs.recurse = recurse;
+
+fs.size = function(root: string, ignores?: string[]): number {
+	let size = 0;
+
+	fs.recurse(root, {
+		dir : (filepath, filename) => {
+			if (ignores?.includes(filename)) {
+				return;
+			}
+
+			size += fs.size(filepath, ignores);
+		},
+		file : (filepath, filename) => {
+			if (ignores?.includes(filename)) {
+				return;
+			}
+
+			size += fs.lstatSync(filepath).size;
+		},
+	}, 1);
+
+	return size;
+};
 
 export {};

@@ -357,60 +357,55 @@ describe('src/lib/fs', function() {
 	});
 
 	describe('recurse', function() {
-		type FSFile = { name : string, fullName?: string, type?: keyof Parameters<typeof fs.recurse>[1] };
-		type FSDir = FSFile & { dirs?: FSDir[], files?: FSFile[], links?: FSLink[] };
-		type FSLink = FSFile & { target: string };
+
+		type FSItem = { name: string, fullName: string, type: keyof Parameters<typeof fs.recurse>[1] };
+		type FSFile = FSItem & { type: 'file', size: number };
+		type FSLink = FSItem & { type: 'link', target: string };
+		type FSDir = FSItem & { type: 'dir', items?: (FSDir | FSFile | FSLink)[] };
 
 		const fsTree: FSDir = {
-			name : 'C:',
-			dirs : [ {
-				name : 'ProgramData',
-				dirs : [ {
-					name  : 'MySoftware',
-					files : [ {
-						name : 'errors.log',
-					}, {
-						name : 'profile.dat',
-					} ],
-				} ],
-				links : [ {
-					name   : 'Desktop',
-					target : 'C:/Users/Public/Desktop',
-				} ],
-			}, {
-				name : 'System Volume Information',
-			}, {
-				name : 'Users',
-				dirs : [ {
-					name : 'Public',
-					dirs : [ {
-						name : 'Desktop',
-					}, {
-						name  : 'Downloads',
-						files : [ {
-							name : 'install.zip',
-						}, {
-							name : 'image.jpg',
-						} ],
-					} ],
-					files : [ {
-						name : 'desktop.ini',
-					}, {
-						name : 'ntuser.dat',
-					} ],
-				} ],
-				links : [ {
-					name   : 'AllUsers',
-					target : 'C:/ProgramData',
-				} ],
-			} ],
-			files : [ {
-				name : 'pagefile.sys',
-			} ],
-			links : [ {
-				name   : 'Documents and Settings',
-				target : 'C:/Users',
-			} ],
+			name     : 'C:',
+			type     : 'dir',
+			fullName : '',
+			items    : [
+				{ name     : 'ProgramData',
+					type     : 'dir',
+					fullName : '',
+					items    : [
+						{ name     : 'MySoftware',
+							type     : 'dir',
+							fullName : '',
+							items    : [
+								{ name : 'errors.log', size : 10, type : 'file', fullName : '' },
+								{ name : 'profile.dat', size : 20, type : 'file', fullName : '' },
+							] },
+						{ name : 'Desktop', target : 'C:/Users/Public/Desktop', type : 'link', fullName : '' },
+					] },
+				{ name : 'System Volume Information', type : 'dir', fullName : '' },
+				{ name     : 'Users',
+					type     : 'dir',
+					fullName : '',
+					items    : [
+						{ name     : 'Public',
+							type     : 'dir',
+							fullName : '',
+							items    : [
+								{ name : 'Desktop', type : 'dir', fullName : '' },
+								{ name     : 'Downloads',
+									type     : 'dir',
+									fullName : '',
+									items    : [
+										{ name : 'install.zip', size : 30, type : 'file', fullName : '' },
+										{ name : 'image.jpg', size : 40, type : 'file', fullName : '' },
+									] },
+								{ name : 'desktop.ini', size : 50, type : 'file', fullName : '' },
+								{ name : 'ntuser.dat', size : 60, type : 'file', fullName : '' },
+							] },
+						{ name : 'AllUsers', target : 'C:/ProgramData', type : 'link', fullName : '' },
+					] },
+				{ name : 'pagefile.sys', size : 70, type : 'file', fullName : '' },
+				{ name : 'Documents and Settings', target : 'C:/Users', type : 'link', fullName : '' },
+			],
 		};
 
 		const callbacks = {
@@ -421,20 +416,18 @@ describe('src/lib/fs', function() {
 
 		const allFiles: Record<string, FSFile | FSDir | FSLink> = {};
 
-		function processFile(entity: FSFile | FSDir | FSLink, type: keyof Parameters<typeof fs.recurse>[1], prefix?: string) {
-			entity.fullName           = prefix ? `${prefix}/${entity.name}` : entity.name;
-			entity.type               = type;
-			allFiles[entity.fullName] = entity;
+		function processItem<TItem extends FSFile | FSDir | FSLink>(item: TItem, prefix?: string): void {
+			const fullName = prefix ? `${prefix}/${item.name}` : item.name;
+			item.fullName  = fullName;
+
+			if (item.type === 'dir') {
+				item.items?.map((childItem) => processItem(childItem, item.fullName));
+			}
+
+			allFiles[fullName] = item;
 		}
 
-		function processAllFiles(root: FSDir, prefix?: string): void {
-			processFile(root, 'dir', prefix);
-			root.files?.map((file) => processFile(file, 'file', root.fullName));
-			root.links?.map((link) => processFile(link, 'link', root.fullName));
-			root.dirs?.map((dir) => processAllFiles(dir, root.fullName));
-		}
-
-		processAllFiles(fsTree);
+		processItem(fsTree);
 
 		let readdirSyncSpy: jest.SpyInstance;
 		let existsSyncSpy: jest.SpyInstance;
@@ -446,18 +439,16 @@ describe('src/lib/fs', function() {
 
 		beforeEach(() => {
 			readdirSyncSpy.mockImplementation((fullName: string, options?: { withFileTypes?: boolean }) => {
-				const fsDir: FSDir = allFiles[fullName];
+				const fsDir = allFiles[fullName];
 
-				return [
-					...(fsDir.dirs || []),
-					...(fsDir.files || []),
-					...(fsDir.links || []),
-				].map((item) => options?.withFileTypes ? {
-					name           : item.name,
-					isFile         : () => allFiles[item.fullName || ''].type === 'file',
-					isDirectory    : () => allFiles[item.fullName || ''].type === 'dir',
-					isSymbolicLink : () => allFiles[item.fullName || ''].type === 'link',
-				} : item.name);
+				return fsDir.type !== 'dir'
+					? []
+					: fsDir.items?.map((item) => options?.withFileTypes ? {
+						name           : item.name,
+						isFile         : () => allFiles[item.fullName].type === 'file',
+						isDirectory    : () => allFiles[item.fullName].type === 'dir',
+						isSymbolicLink : () => allFiles[item.fullName].type === 'link',
+					} : item.name) || [];
 			});
 
 			existsSyncSpy.mockImplementation((fullName: string) => Object.keys(allFiles).includes(fullName));
@@ -468,174 +459,207 @@ describe('src/lib/fs', function() {
 			existsSyncSpy.mockRestore();
 		});
 
-		describe('processAllFiles', () => {
-			it('should correctly build list of all files', () => {
-				expect(allFiles).toEqual({
-					'C:' : expect.objectContaining({
-						type : 'dir', fullName : 'C:', name : 'C:',
-					}),
-					'C:/Documents and Settings' : expect.objectContaining({
-						type : 'link', fullName : 'C:/Documents and Settings', name : 'Documents and Settings', target : 'C:/Users',
-					}),
-					'C:/ProgramData' : expect.objectContaining({
-						type : 'dir', fullName : 'C:/ProgramData', name : 'ProgramData',
-					}),
-					'C:/ProgramData/Desktop' : expect.objectContaining({
-						type : 'link', fullName : 'C:/ProgramData/Desktop', name : 'Desktop', target : 'C:/Users/Public/Desktop',
-					}),
-					'C:/ProgramData/MySoftware' : expect.objectContaining({
-						type : 'dir', fullName : 'C:/ProgramData/MySoftware', name : 'MySoftware',
-					}),
-					'C:/ProgramData/MySoftware/errors.log' : expect.objectContaining({
-						type : 'file', fullName : 'C:/ProgramData/MySoftware/errors.log', name : 'errors.log',
-					}),
-					'C:/ProgramData/MySoftware/profile.dat' : expect.objectContaining({
-						type : 'file', fullName : 'C:/ProgramData/MySoftware/profile.dat', name : 'profile.dat',
-					}),
-					'C:/System Volume Information' : expect.objectContaining({
-						type : 'dir', fullName : 'C:/System Volume Information', name : 'System Volume Information',
-					}),
-					'C:/Users' : expect.objectContaining({
-						type : 'dir', fullName : 'C:/Users', name : 'Users',
-					}),
-					'C:/Users/AllUsers' : expect.objectContaining({
-						type : 'link', fullName : 'C:/Users/AllUsers', name : 'AllUsers', target : 'C:/ProgramData',
-					}),
-					'C:/Users/Public' : expect.objectContaining({
-						type : 'dir', fullName : 'C:/Users/Public', name : 'Public',
-					}),
-					'C:/Users/Public/desktop.ini' : expect.objectContaining({
-						type : 'file', fullName : 'C:/Users/Public/desktop.ini', name : 'desktop.ini',
-					}),
-					'C:/Users/Public/ntuser.dat' : expect.objectContaining({
-						type : 'file', fullName : 'C:/Users/Public/ntuser.dat', name : 'ntuser.dat',
-					}),
-					'C:/Users/Public/Desktop' : expect.objectContaining({
-						type : 'dir', fullName : 'C:/Users/Public/Desktop', name : 'Desktop',
-					}),
-					'C:/Users/Public/Downloads' : expect.objectContaining({
-						type : 'dir', fullName : 'C:/Users/Public/Downloads', name : 'Downloads',
-					}),
-					'C:/Users/Public/Downloads/install.zip' : expect.objectContaining({
-						type : 'file', fullName : 'C:/Users/Public/Downloads/install.zip', name : 'install.zip',
-					}),
-					'C:/Users/Public/Downloads/image.jpg' : expect.objectContaining({
-						type : 'file', fullName : 'C:/Users/Public/Downloads/image.jpg', name : 'image.jpg',
-					}),
-					'C:/pagefile.sys' : expect.objectContaining({
-						type : 'file', fullName : 'C:/pagefile.sys', name : 'pagefile.sys',
-					}),
+		describe('recurse', () => {
+			describe('processAllFiles', () => {
+				it('should correctly build list of all files', () => {
+					expect(allFiles).toEqual({
+						'C:' : expect.objectContaining({
+							type : 'dir', fullName : 'C:', name : 'C:',
+						}),
+						'C:/Documents and Settings' : expect.objectContaining({
+							type : 'link', fullName : 'C:/Documents and Settings', name : 'Documents and Settings', target : 'C:/Users',
+						}),
+						'C:/ProgramData' : expect.objectContaining({
+							type : 'dir', fullName : 'C:/ProgramData', name : 'ProgramData',
+						}),
+						'C:/ProgramData/Desktop' : expect.objectContaining({
+							type : 'link', fullName : 'C:/ProgramData/Desktop', name : 'Desktop', target : 'C:/Users/Public/Desktop',
+						}),
+						'C:/ProgramData/MySoftware' : expect.objectContaining({
+							type : 'dir', fullName : 'C:/ProgramData/MySoftware', name : 'MySoftware',
+						}),
+						'C:/ProgramData/MySoftware/errors.log' : expect.objectContaining({
+							type : 'file', fullName : 'C:/ProgramData/MySoftware/errors.log', name : 'errors.log', size : 10,
+						}),
+						'C:/ProgramData/MySoftware/profile.dat' : expect.objectContaining({
+							type : 'file', fullName : 'C:/ProgramData/MySoftware/profile.dat', name : 'profile.dat', size : 20,
+						}),
+						'C:/System Volume Information' : expect.objectContaining({
+							type : 'dir', fullName : 'C:/System Volume Information', name : 'System Volume Information',
+						}),
+						'C:/Users' : expect.objectContaining({
+							type : 'dir', fullName : 'C:/Users', name : 'Users',
+						}),
+						'C:/Users/AllUsers' : expect.objectContaining({
+							type : 'link', fullName : 'C:/Users/AllUsers', name : 'AllUsers', target : 'C:/ProgramData',
+						}),
+						'C:/Users/Public' : expect.objectContaining({
+							type : 'dir', fullName : 'C:/Users/Public', name : 'Public',
+						}),
+						'C:/Users/Public/Desktop' : expect.objectContaining({
+							type : 'dir', fullName : 'C:/Users/Public/Desktop', name : 'Desktop',
+						}),
+						'C:/Users/Public/Downloads' : expect.objectContaining({
+							type : 'dir', fullName : 'C:/Users/Public/Downloads', name : 'Downloads',
+						}),
+						'C:/Users/Public/Downloads/install.zip' : expect.objectContaining({
+							type : 'file', fullName : 'C:/Users/Public/Downloads/install.zip', name : 'install.zip', size : 30,
+						}),
+						'C:/Users/Public/Downloads/image.jpg' : expect.objectContaining({
+							type : 'file', fullName : 'C:/Users/Public/Downloads/image.jpg', name : 'image.jpg', size : 40,
+						}),
+						'C:/Users/Public/desktop.ini' : expect.objectContaining({
+							type : 'file', fullName : 'C:/Users/Public/desktop.ini', name : 'desktop.ini', size : 50,
+						}),
+						'C:/Users/Public/ntuser.dat' : expect.objectContaining({
+							type : 'file', fullName : 'C:/Users/Public/ntuser.dat', name : 'ntuser.dat', size : 60,
+						}),
+						'C:/pagefile.sys' : expect.objectContaining({
+							type : 'file', fullName : 'C:/pagefile.sys', name : 'pagefile.sys', size : 70,
+						}),
+					});
 				});
+			});
+
+			it('should do nothing if root does not exist', () => {
+				fs.recurse('C:/wrongpath', callbacks.file);
+
+				expect(callbacks.file).not.toHaveBeenCalled();
+				expect(readdirSyncSpy).not.toHaveBeenCalled();
+			});
+
+			it('should recursively apply the only callback to all nested entities except itself', () => {
+				fs.recurse('C:/ProgramData', callbacks.file);
+
+				expect(callbacks.file).toHaveBeenCalledTimes(4);
+				expect(callbacks.file).toHaveBeenCalledWith('C:/ProgramData/Desktop', 'Desktop', expect.anything());
+				expect(callbacks.file).toHaveBeenCalledWith('C:/ProgramData/MySoftware', 'MySoftware', expect.anything());
+				expect(callbacks.file).toHaveBeenCalledWith('C:/ProgramData/MySoftware/errors.log', 'errors.log', expect.anything());
+				expect(callbacks.file).toHaveBeenCalledWith('C:/ProgramData/MySoftware/profile.dat', 'profile.dat', expect.anything());
+			});
+
+			it('should not apply callback to itself', () => {
+				fs.recurse('C:/ProgramData', callbacks.file);
+
+				expect(callbacks.file).not.toHaveBeenCalledWith('C:/ProgramData', 'ProgramData', expect.anything());
+			});
+
+			it('should recursively read all nested directories', () => {
+				fs.recurse('C:', callbacks.file);
+
+				expect(readdirSyncSpy).toHaveBeenCalledTimes(7);
+				expect(readdirSyncSpy).toHaveBeenCalledWith('C:', { withFileTypes : true });
+				expect(readdirSyncSpy).toHaveBeenCalledWith('C:/ProgramData', { withFileTypes : true });
+				expect(readdirSyncSpy).toHaveBeenCalledWith('C:/ProgramData/MySoftware', { withFileTypes : true });
+				expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users', { withFileTypes : true });
+				expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users/Public', { withFileTypes : true });
+				expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users/Public/Desktop', { withFileTypes : true });
+				expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users/Public/Downloads', { withFileTypes : true });
+			});
+
+			it('should not process System Volume Information', () => {
+				fs.recurse('C:', callbacks.file);
+
+				expect(readdirSyncSpy).not.toHaveBeenCalledWith('C:/System Volume Information');
+			});
+
+			it('should recursively apply callbacks of each type', () => {
+				fs.recurse('C:/ProgramData', callbacks);
+
+				expect(callbacks.dir).toHaveBeenCalledTimes(1);
+				expect(callbacks.dir).toHaveBeenCalledWith('C:/ProgramData/MySoftware', 'MySoftware', expect.anything());
+
+				expect(callbacks.link).toHaveBeenCalledTimes(1);
+				expect(callbacks.link).toHaveBeenCalledWith('C:/ProgramData/Desktop', 'Desktop', expect.anything());
+
+				expect(callbacks.file).toHaveBeenCalledTimes(2);
+				expect(callbacks.file).toHaveBeenCalledWith('C:/ProgramData/MySoftware/errors.log', 'errors.log', expect.anything());
+				expect(callbacks.file).toHaveBeenCalledWith('C:/ProgramData/MySoftware/profile.dat', 'profile.dat', expect.anything());
+			});
+
+			it('should not apply callbacks of non-existing types', () => {
+				fs.recurse('C:/Users/Public', callbacks);
+
+				expect(callbacks.dir).toHaveBeenCalled();
+				expect(callbacks.file).toHaveBeenCalled();
+				expect(callbacks.link).not.toHaveBeenCalled();
+			});
+
+			it('should not apply any callbacks if no any nested entities', () => {
+				fs.recurse('C:/Users/Public/Desktop', callbacks);
+
+				expect(callbacks.dir).not.toHaveBeenCalled();
+				expect(callbacks.file).not.toHaveBeenCalled();
+				expect(callbacks.link).not.toHaveBeenCalled();
+			});
+
+			it('should limit entities to current level if depth is 1', () => {
+				fs.recurse('C:/Users', callbacks, 1);
+
+				expect(readdirSyncSpy).toHaveBeenCalledTimes(1);
+				expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users', { withFileTypes : true });
+
+				expect(callbacks.dir).toHaveBeenCalledTimes(1);
+				expect(callbacks.dir).toHaveBeenCalledWith('C:/Users/Public', 'Public', expect.anything());
+
+				expect(callbacks.file).not.toHaveBeenCalled();
+
+				expect(callbacks.link).toHaveBeenCalledTimes(1);
+				expect(callbacks.link).toHaveBeenCalledWith('C:/Users/AllUsers', 'AllUsers', expect.anything());
+			});
+
+			it('should limit entities to specified level if depth is positive number', () => {
+				fs.recurse('C:', callbacks, 2);
+
+				expect(readdirSyncSpy).toHaveBeenCalledTimes(3);
+				expect(readdirSyncSpy).toHaveBeenCalledWith('C:', { withFileTypes : true });
+				expect(readdirSyncSpy).toHaveBeenCalledWith('C:/ProgramData', { withFileTypes : true });
+				expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users', { withFileTypes : true });
+
+				expect(callbacks.dir).toHaveBeenCalledTimes(4);
+				expect(callbacks.dir).toHaveBeenCalledWith('C:/ProgramData', 'ProgramData', expect.anything());
+				expect(callbacks.dir).toHaveBeenCalledWith('C:/ProgramData/MySoftware', 'MySoftware', expect.anything());
+				expect(callbacks.dir).toHaveBeenCalledWith('C:/Users', 'Users', expect.anything());
+				expect(callbacks.dir).toHaveBeenCalledWith('C:/Users/Public', 'Public', expect.anything());
+
+				expect(callbacks.file).toHaveBeenCalledTimes(1);
+				expect(callbacks.file).toHaveBeenCalledWith('C:/pagefile.sys', 'pagefile.sys', expect.anything());
+
+				expect(callbacks.link).toHaveBeenCalledTimes(3);
+				expect(callbacks.link).toHaveBeenCalledWith('C:/Documents and Settings', 'Documents and Settings', expect.anything());
+				expect(callbacks.link).toHaveBeenCalledWith('C:/ProgramData/Desktop', 'Desktop', expect.anything());
 			});
 		});
 
-		it('should do nothing if root does not exist', () => {
-			fs.recurse('C:/wrongpath', callbacks.file);
+		describe('size', () => {
+			let lstatSyncSpy: jest.SpyInstance;
 
-			expect(callbacks.file).not.toHaveBeenCalled();
-			expect(readdirSyncSpy).not.toHaveBeenCalled();
-		});
+			beforeAll(() => {
+				lstatSyncSpy = jest.spyOn(fs, 'lstatSync');
+			});
 
-		it('should recursively apply the only callback to all nested entities except itself', () => {
-			fs.recurse('C:/ProgramData', callbacks.file);
+			beforeEach(() => {
+				lstatSyncSpy.mockImplementation((filepath) => {
+					const item = allFiles[filepath];
+					return { size : item.type === 'file' ? item.size : 0 };
+				});
+			});
 
-			expect(callbacks.file).toHaveBeenCalledTimes(4);
-			expect(callbacks.file).toHaveBeenCalledWith('C:/ProgramData/Desktop', 'Desktop', expect.anything());
-			expect(callbacks.file).toHaveBeenCalledWith('C:/ProgramData/MySoftware', 'MySoftware', expect.anything());
-			expect(callbacks.file).toHaveBeenCalledWith('C:/ProgramData/MySoftware/errors.log', 'errors.log', expect.anything());
-			expect(callbacks.file).toHaveBeenCalledWith('C:/ProgramData/MySoftware/profile.dat', 'profile.dat', expect.anything());
-		});
+			afterAll(() => {
+				lstatSyncSpy.mockRestore();
+			});
 
-		it('should not apply callback to itself', () => {
-			fs.recurse('C:/ProgramData', callbacks.file);
+			it('should calculate size', () => {
+				expect(fs.size('C:')).toEqual(280);
+			});
 
-			expect(callbacks.file).not.toHaveBeenCalledWith('C:/ProgramData', 'ProgramData', expect.anything());
-		});
+			it('should calculate size without ignored files', () => {
+				expect(fs.size('C:', [ 'install.zip', 'profile.dat' ])).toEqual(230);
+			});
 
-		it('should recursively read all nested directories', () => {
-			fs.recurse('C:', callbacks.file);
-
-			expect(readdirSyncSpy).toHaveBeenCalledTimes(7);
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:', { withFileTypes : true });
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/ProgramData', { withFileTypes : true });
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/ProgramData/MySoftware', { withFileTypes : true });
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users', { withFileTypes : true });
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users/Public', { withFileTypes : true });
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users/Public/Desktop', { withFileTypes : true });
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users/Public/Downloads', { withFileTypes : true });
-		});
-
-		it('should not process System Volume Information', () => {
-			fs.recurse('C:', callbacks.file);
-
-			expect(readdirSyncSpy).not.toHaveBeenCalledWith('C:/System Volume Information');
-		});
-
-		it('should recursively apply callbacks of each type', () => {
-			fs.recurse('C:/ProgramData', callbacks);
-
-			expect(callbacks.dir).toHaveBeenCalledTimes(1);
-			expect(callbacks.dir).toHaveBeenCalledWith('C:/ProgramData/MySoftware', 'MySoftware', expect.anything());
-
-			expect(callbacks.link).toHaveBeenCalledTimes(1);
-			expect(callbacks.link).toHaveBeenCalledWith('C:/ProgramData/Desktop', 'Desktop', expect.anything());
-
-			expect(callbacks.file).toHaveBeenCalledTimes(2);
-			expect(callbacks.file).toHaveBeenCalledWith('C:/ProgramData/MySoftware/errors.log', 'errors.log', expect.anything());
-			expect(callbacks.file).toHaveBeenCalledWith('C:/ProgramData/MySoftware/profile.dat', 'profile.dat', expect.anything());
-		});
-
-		it('should not apply callbacks of non-existing types', () => {
-			fs.recurse('C:/Users/Public', callbacks);
-
-			expect(callbacks.dir).toHaveBeenCalled();
-			expect(callbacks.file).toHaveBeenCalled();
-			expect(callbacks.link).not.toHaveBeenCalled();
-		});
-
-		it('should not apply any callbacks if no any nested entities', () => {
-			fs.recurse('C:/Users/Public/Desktop', callbacks);
-
-			expect(callbacks.dir).not.toHaveBeenCalled();
-			expect(callbacks.file).not.toHaveBeenCalled();
-			expect(callbacks.link).not.toHaveBeenCalled();
-		});
-
-		it('should limit entities to current level if depth is 1', () => {
-			fs.recurse('C:/Users', callbacks, 1);
-
-			expect(readdirSyncSpy).toHaveBeenCalledTimes(1);
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users', { withFileTypes : true });
-
-			expect(callbacks.dir).toHaveBeenCalledTimes(1);
-			expect(callbacks.dir).toHaveBeenCalledWith('C:/Users/Public', 'Public', expect.anything());
-
-			expect(callbacks.file).not.toHaveBeenCalled();
-
-			expect(callbacks.link).toHaveBeenCalledTimes(1);
-			expect(callbacks.link).toHaveBeenCalledWith('C:/Users/AllUsers', 'AllUsers', expect.anything());
-		});
-
-		it('should limit entities to specified level if depth is positive number', () => {
-			fs.recurse('C:', callbacks, 2);
-
-			expect(readdirSyncSpy).toHaveBeenCalledTimes(3);
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:', { withFileTypes : true });
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/ProgramData', { withFileTypes : true });
-			expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users', { withFileTypes : true });
-
-			expect(callbacks.dir).toHaveBeenCalledTimes(4);
-			expect(callbacks.dir).toHaveBeenCalledWith('C:/ProgramData', 'ProgramData', expect.anything());
-			expect(callbacks.dir).toHaveBeenCalledWith('C:/ProgramData/MySoftware', 'MySoftware', expect.anything());
-			expect(callbacks.dir).toHaveBeenCalledWith('C:/Users', 'Users', expect.anything());
-			expect(callbacks.dir).toHaveBeenCalledWith('C:/Users/Public', 'Public', expect.anything());
-
-			expect(callbacks.file).toHaveBeenCalledTimes(1);
-			expect(callbacks.file).toHaveBeenCalledWith('C:/pagefile.sys', 'pagefile.sys', expect.anything());
-
-			expect(callbacks.link).toHaveBeenCalledTimes(3);
-			expect(callbacks.link).toHaveBeenCalledWith('C:/Documents and Settings', 'Documents and Settings', expect.anything());
-			expect(callbacks.link).toHaveBeenCalledWith('C:/ProgramData/Desktop', 'Desktop', expect.anything());
+			it('should calculate size without ignored directories', () => {
+				expect(fs.size('C:', [ 'Downloads', 'MySoftware' ])).toEqual(180);
+			});
 		});
 	});
 });
