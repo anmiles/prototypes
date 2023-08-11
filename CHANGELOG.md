@@ -5,13 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.2.0](../../tags/v2.1.8) - 2023-08-11
+## [2.2.1](../../tags/v2.2.1) - 2023-08-11
 ### Added
-- fs.prototype.size to get directory size
+- `fs.prototype.size` to get directory size
 
 ## [2.1.7](../../tags/v2.1.7) - 2023-08-11
 ### Changed
-- Use Dirent type in fs.recurse to reduce functions calls
+- Use Dirent type in `fs.recurse` to reduce functions calls
 
 ## [2.1.6](../../tags/v2.1.6) - 2023-08-05
 ### Changed
@@ -23,12 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.1.3](../../tags/v2.1.3) - 2023-08-04
 ### Changed
-- Multiple fixes for String.prototype.toFilename
+- Multiple fixes for `String.prototype.toFilename`
 
 ## [2.1.0](../../tags/v2.1.0) - 2023-08-04
 ### Added
-- String.prototype.beautify unifies similar special symbols
-- String.prototype.toFilename converts string into a valid filename
+- `String.prototype.beautify` unifies similar special symbols
+- `String.prototype.toFilename` converts string into a valid filename
 
 ## [2.0.2](../../tags/v2.0.2) - 2023-05-08
 ### Changed

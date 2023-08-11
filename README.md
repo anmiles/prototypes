@@ -20,6 +20,8 @@ Provides prototype extensions for native JS modules
 - `String.prototype.regexEscape` - escape regular expression
 - `String.prototype.htmlEscape` - escape HTML-sensitive string
 - `String.prototype.urlEscape` - escape string to make it URL-safe
+- `String.prototype.beautify` - unifies similar special symbols
+- `String.prototype.toFilename` - converts string into a valid filename
 
 ### Array
 
@@ -40,6 +42,7 @@ Provides prototype extensions for native JS modules
 - `fs.readTSV` - read and parse TSV from file
 - `fs.writeTSV` - write TSV to file
 - `fs.recurse` - recursively traverse directory for specified depth and apply callbacks for files, directories and links
+- `fs.size` - recursively calculates get directory size
 
 ### process
 
