@@ -3,8 +3,8 @@ import path from 'path';
 import iconv from 'iconv-lite';
 
 declare module 'fs' {
-	export function ensureDir(dirPath: string): string;
-	export function ensureFile(dirPath: string): string;
+	export function ensureDir(dirPath: string, throwIfNotExists?: boolean): string;
+	export function ensureFile(dirPath: string, throwIfNotExists?: boolean): string;
 
 	export function readJSON<T = any>(filename: string): T;
 	export function writeJSON<T = any>(filename: string, json: T): void;
@@ -21,8 +21,12 @@ declare module 'fs' {
 	export function size(root: string, ignores?: string[]): number;
 }
 
-fs.ensureDir = function(dirPath: string): string {
+fs.ensureDir = function(dirPath: string, throwIfNotExists = false): string {
 	if (!fs.existsSync(dirPath)) {
+		if (throwIfNotExists) {
+			throw `${dirPath} does not exist`;
+		}
+
 		fs.mkdirSync(dirPath, { recursive : true });
 	} else {
 		if (fs.lstatSync(dirPath).isFile()) {
@@ -32,10 +36,14 @@ fs.ensureDir = function(dirPath: string): string {
 	return dirPath;
 };
 
-fs.ensureFile = function(filePath: string): string {
+fs.ensureFile = function(filePath: string, throwIfNotExists = false): string {
 	fs.ensureDir(path.dirname(filePath));
 
 	if (!fs.existsSync(filePath)) {
+		if (throwIfNotExists) {
+			throw `${filePath} does not exist`;
+		}
+
 		fs.writeFileSync(filePath, '');
 	} else {
 		if (fs.lstatSync(filePath).isDirectory()) {

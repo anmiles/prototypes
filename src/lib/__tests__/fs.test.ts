@@ -42,6 +42,14 @@ describe('src/lib/fs', function() {
 			expect(fs.mkdirSync).toHaveBeenCalledWith(dirPath, { recursive : true });
 		});
 
+		it('should throw if not exists and throwIfNotExists is true', () => {
+			exists = false;
+
+			const func = () => fs.ensureDir(dirPath, true);
+
+			expect(func).toThrow(`${dirPath} does not exist`);
+		});
+
 		it('should not create empty dir if already exists', () => {
 			exists = true;
 
@@ -94,6 +102,14 @@ describe('src/lib/fs', function() {
 			fs.ensureFile(filePath);
 
 			expect(fs.writeFileSync).toHaveBeenCalledWith(filePath, '');
+		});
+
+		it('should throw if not exists and throwIfNotExists is true', () => {
+			exists = false;
+
+			const func = () => fs.ensureFile(filePath, true);
+
+			expect(func).toThrow(`${filePath} does not exist`);
 		});
 
 		it('should not create empty file if already exists', () => {
