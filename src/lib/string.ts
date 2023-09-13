@@ -27,9 +27,15 @@ String.prototype.toLowerFirstLetter = function() {
 };
 
 String.prototype.htmlEscape = function() {
-	return this.replace(/[\u00A0-\u9999<>&]/gim, function(i: string) {
-		return `&#${i.charCodeAt(0)};`;
-	});
+	return this
+		.replace(/&/gm, '&amp;')
+		.replace(/\xa0/gm, '&nbsp;')
+		.replace(/</gm, '&lt;')
+		.replace(/>/gm, '&gt;')
+		.replace(/[\u00a0-\u9999]/gim, function(i: string) {
+			return `&#${i.charCodeAt(0)};`;
+		})
+	;
 };
 
 String.prototype.urlEscape = function() {
