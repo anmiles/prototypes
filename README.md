@@ -17,9 +17,9 @@ Provides prototype extensions for native JS modules
 
 - `String.prototype.toUpperFirstLetter` - make first letter uppercase
 - `String.prototype.toLowerFirstLetter` - make first letter lowercase
-- `String.prototype.regexEscape` - escape regular expression
 - `String.prototype.htmlEscape` - escape HTML-sensitive string
 - `String.prototype.urlEscape` - escape string to make it URL-safe
+- `String.prototype.regexEscape` - escape regular expression
 - `String.prototype.beautify` - unifies similar special symbols
 - `String.prototype.toFilename` - converts string into a valid filename
 
@@ -47,3 +47,14 @@ Provides prototype extensions for native JS modules
 ### process
 
 - `process.start` - run process in Windows environment and optionally output stdout/stderr or process them with custom functions
+
+## Useful strings for testing purposes:
+
+- string value
+  - `begin  .-'``"~!@#$%^&*?:;,_=+/\|[]{}()<>&nbsp;&lt;&gt;²½áßÈіíž©§€₤∑א雨https://A-_/?b[c]&(1)end`
+- query string value
+  - `begin .-'``"~!@$%^*:;,_=+\|()[]{}<>²½áßÈіíž©§€₤∑א雨https://A-_/b[c](1)end`
+- url
+  - `https://example.com/begin.-'``"~!@#$%^&*?:;,_=+/\|()[]{}<>&nbsp;&lt;&gt;²½áßÈіíž©§€₤∑א雨end`
+- email
+  - `test.-'``~!#$%^&*?_=+/|{}&nbsp&lt&gtіž€₤∑א雨@example.com`
