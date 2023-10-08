@@ -1,4 +1,5 @@
 import fs from 'fs';
+import fsPromises from 'fs/promises';
 import path from 'path';
 import iconv from 'iconv-lite';
 
@@ -21,7 +22,26 @@ declare module 'fs' {
 	export function size(root: string, ignores?: string[]): number;
 }
 
-fs.ensureDir = function(dirPath: string, throwIfNotExists = false): string {
+declare module 'fs/promises' {
+	export function ensureDir(dirPath: string, throwIfNotExists?: boolean): string;
+	export function ensureFile(dirPath: string, throwIfNotExists?: boolean): string;
+
+	export function readJSON<T = any>(filename: string): T;
+	export function writeJSON<T = any>(filename: string, json: T): void;
+
+	export function getJSON<T = any>(filename: string, createCallback: () => Exclude<T, Promise<any>>, validateCallback?: (json: T) => { isValid: boolean, validationError?: string }): T;
+	export function getJSONAsync<T = any>(filename: string, createCallback: () => Promise<T>, validateCallback?: (json: T) => Promise<{ isValid: boolean, validationError?: string }>): Promise<T>;
+
+	export function readTSV(filename: string): Array<Record<string, any>>;
+	export function writeTSV(filename: string, data: Array<Record<string, any>>): void;
+
+	export function recurse(root: string, callback: FSCallback, options?: { depth?: number, ext?: string }): void;
+	export function recurse(root: string, callbacks: { dir?: FSCallback, file?: FSCallback, link?: FSCallback }, options?: { depth?: number, ext?: string }): void;
+
+	export function size(root: string, ignores?: string[]): number;
+}
+
+fs.ensureDir = fsPromises.ensureDir = function(dirPath: string, throwIfNotExists = false): string {
 	if (!fs.existsSync(dirPath)) {
 		if (throwIfNotExists) {
 			throw `${dirPath} does not exist`;
@@ -36,7 +56,7 @@ fs.ensureDir = function(dirPath: string, throwIfNotExists = false): string {
 	return dirPath;
 };
 
-fs.ensureFile = function(filePath: string, throwIfNotExists = false): string {
+fs.ensureFile = fsPromises.ensureFile = function(filePath: string, throwIfNotExists = false): string {
 	fs.ensureDir(path.dirname(filePath));
 
 	if (!fs.existsSync(filePath)) {
@@ -53,15 +73,15 @@ fs.ensureFile = function(filePath: string, throwIfNotExists = false): string {
 	return filePath;
 };
 
-fs.readJSON = function<T = any>(filename: string): T {
+fs.readJSON = fsPromises.readJSON = function<T = any>(filename: string): T {
 	return JSON.parse(fs.readFileSync(filename).toString().replace('\ufeff', ''));
 };
 
-fs.writeJSON = function<T = any>(filename: string, json: T): void {
+fs.writeJSON = fsPromises.writeJSON = function<T = any>(filename: string, json: T): void {
 	fs.writeFileSync(filename, `\ufeff${JSON.stringify(json, null, '    ')}`);
 };
 
-fs.getJSON = function<T = any>(filename: string, createCallback: () => Exclude<T, Promise<any>>, validateCallback: (json: T) => { isValid: boolean, validationError?: string } = () => ({ isValid : true })): T {
+fs.getJSON = fsPromises.getJSON = function<T = any>(filename: string, createCallback: () => Exclude<T, Promise<any>>, validateCallback: (json: T) => { isValid: boolean, validationError?: string } = () => ({ isValid : true })): T {
 	if (fs.existsSync(filename)) {
 		const json        = fs.readJSON<T>(filename);
 		const { isValid } = validateCallback(json);
@@ -83,7 +103,7 @@ fs.getJSON = function<T = any>(filename: string, createCallback: () => Exclude<T
 	throw [ err, validationError ].filter((s) => s).join(': ');
 };
 
-fs.getJSONAsync = async function<T>(filename: string, createCallback: () => Promise<T>, validateCallback: (json: T) => Promise<{ isValid: boolean, validationError?: string }> = async () => ({ isValid : true })): Promise<T> {
+fs.getJSONAsync = fsPromises.getJSONAsync = async function<T>(filename: string, createCallback: () => Promise<T>, validateCallback: (json: T) => Promise<{ isValid: boolean, validationError?: string }> = async () => ({ isValid : true })): Promise<T> {
 	if (fs.existsSync(filename)) {
 		const json        = fs.readJSON<T>(filename);
 		const { isValid } = await validateCallback(json);
@@ -105,7 +125,7 @@ fs.getJSONAsync = async function<T>(filename: string, createCallback: () => Prom
 	throw [ err, validationError ].filter((s) => s).join(': ');
 };
 
-fs.readTSV = function(filename: string): Array<Record<string, any>> {
+fs.readTSV = fsPromises.readTSV = function(filename: string): Array<Record<string, any>> {
 	const tsv     = iconv.decode(fs.readFileSync(filename), 'cp1251');
 	const lines   = tsv.trim().split('\r\n').map((line) => line.split('\t'));
 	const headers = lines.shift() as string[];
@@ -115,7 +135,7 @@ fs.readTSV = function(filename: string): Array<Record<string, any>> {
 	return arr;
 };
 
-fs.writeTSV = function(filename: string, data: Array<Record<string, any>>): void {
+fs.writeTSV = fsPromises.writeTSV = function(filename: string, data: Array<Record<string, any>>): void {
 	let tsv = '';
 
 	if (data.length > 0) {
@@ -162,9 +182,9 @@ function recurse(root: string, arg: FSCallback | { dir?: FSCallback, file?: FSCa
 	}
 }
 
-fs.recurse = recurse;
+fs.recurse = fsPromises.recurse = recurse;
 
-fs.size = function(root: string, ignores?: string[]): number {
+fs.size = fsPromises.size = function(root: string, ignores?: string[]): number {
 	let size = 0;
 
 	fs.recurse(root, {

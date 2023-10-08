@@ -31,7 +31,7 @@ Provides prototype extensions for native JS modules
 - `Array.prototype.sum` - sum all values in array
 - `Array.prototype.sort` - sort array by values of nested keys in various directions
 
-### fs
+### fs and fs/promises
 
 - `fs.ensureDir` - check if dir exists and is directory; creates it or throws if not exists
 - `fs.ensureFile` - check if file exists and is file; creates it or throws if not exists
