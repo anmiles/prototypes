@@ -15,8 +15,8 @@ declare module 'fs' {
 	export function readTSV(filename: string): Array<Record<string, any>>;
 	export function writeTSV(filename: string, data: Array<Record<string, any>>): void;
 
-	export function recurse(root: string, callback: FSCallback, depth?: number): void;
-	export function recurse(root: string, callbacks: { dir?: FSCallback, file?: FSCallback, link?: FSCallback }, depth?: number): void;
+	export function recurse(root: string, callback: FSCallback, options?: { depth?: number, ext?: string }): void;
+	export function recurse(root: string, callbacks: { dir?: FSCallback, file?: FSCallback, link?: FSCallback }, options?: { depth?: number, ext?: string }): void;
 
 	export function size(root: string, ignores?: string[]): number;
 }
@@ -130,9 +130,9 @@ fs.writeTSV = function(filename: string, data: Array<Record<string, any>>): void
 
 type FSCallback = (filepath: string, filename: string, dirent: fs.Dirent) => void;
 
-function recurse(root: string, callback: FSCallback, depth?: number): void;
-function recurse(root: string, callbacks: { dir?: FSCallback, file?: FSCallback, link?: FSCallback }, depth?: number): void;
-function recurse(root: string, arg: FSCallback | { dir?: FSCallback, file?: FSCallback, link?: FSCallback }, depth = 0): void {
+function recurse(root: string, callback: FSCallback, options?: { depth?: number, ext?: string }): void;
+function recurse(root: string, callbacks: { dir?: FSCallback, file?: FSCallback, link?: FSCallback }, options?: { depth?: number, ext?: string }): void;
+function recurse(root: string, arg: FSCallback | { dir?: FSCallback, file?: FSCallback, link?: FSCallback }, { depth = 0, ext = '' }: { depth?: number, ext?: string } = {}): void {
 	if (!fs.existsSync(root)) {
 		return;
 	}
@@ -150,11 +150,14 @@ function recurse(root: string, arg: FSCallback | { dir?: FSCallback, file?: FSCa
 
 		if (dirent.isDirectory()) {
 			arg.dir && arg.dir(fullName, dirent.name, dirent);
-			depth === 1 || recurse(fullName, arg, depth - 1);
+
+			if (!(depth === 1)) {
+				recurse(fullName, arg, { depth : depth - 1, ext });
+			}
 		} else if (dirent.isSymbolicLink()) {
 			arg.link && arg.link(fullName, dirent.name, dirent);
 		} else if (dirent.isFile()) {
-			arg.file && arg.file(fullName, dirent.name, dirent);
+			arg.file && (!ext || fullName.endsWith(ext)) && arg.file(fullName, dirent.name, dirent);
 		}
 	}
 }
@@ -179,7 +182,7 @@ fs.size = function(root: string, ignores?: string[]): number {
 
 			size += fs.lstatSync(filepath).size;
 		},
-	}, 1);
+	}, { depth : 1 });
 
 	return size;
 };

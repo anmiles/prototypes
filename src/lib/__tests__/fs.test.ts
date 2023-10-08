@@ -610,7 +610,7 @@ describe('src/lib/fs', function() {
 			});
 
 			it('should limit entities to current level if depth is 1', () => {
-				fs.recurse('C:/Users', callbacks, 1);
+				fs.recurse('C:/Users', callbacks, { depth : 1 });
 
 				expect(readdirSyncSpy).toHaveBeenCalledTimes(1);
 				expect(readdirSyncSpy).toHaveBeenCalledWith('C:/Users', { withFileTypes : true });
@@ -625,7 +625,7 @@ describe('src/lib/fs', function() {
 			});
 
 			it('should limit entities to specified level if depth is positive number', () => {
-				fs.recurse('C:', callbacks, 2);
+				fs.recurse('C:', callbacks, { depth : 2 });
 
 				expect(readdirSyncSpy).toHaveBeenCalledTimes(3);
 				expect(readdirSyncSpy).toHaveBeenCalledWith('C:', { withFileTypes : true });
@@ -644,6 +644,14 @@ describe('src/lib/fs', function() {
 				expect(callbacks.link).toHaveBeenCalledTimes(3);
 				expect(callbacks.link).toHaveBeenCalledWith('C:/Documents and Settings', 'Documents and Settings', expect.anything());
 				expect(callbacks.link).toHaveBeenCalledWith('C:/ProgramData/Desktop', 'Desktop', expect.anything());
+			});
+
+			it('should limit entities to specified extension', () => {
+				fs.recurse('C:', callbacks, { ext : '.dat' });
+
+				expect(callbacks.file).toHaveBeenCalledTimes(2);
+				expect(callbacks.file).toHaveBeenCalledWith('C:/ProgramData/MySoftware/profile.dat', 'profile.dat', expect.anything());
+				expect(callbacks.file).toHaveBeenCalledWith('C:/Users/Public/ntuser.dat', 'ntuser.dat', expect.anything());
 			});
 		});
 

@@ -41,7 +41,7 @@ Provides prototype extensions for native JS modules
 - `fs.getJSONAsync` - asynchronously get JSON from file with asynchronous falling back and asynchronous validation
 - `fs.readTSV` - read and parse TSV from file
 - `fs.writeTSV` - write TSV to file
-- `fs.recurse` - recursively traverse directory for specified depth and apply callbacks for files, directories and links
+- `fs.recurse` - recursively traverse directory for specified depth and apply callbacks for files (with optionally specified extension), directories and links
 - `fs.size` - recursively calculates get directory size
 
 ### process
