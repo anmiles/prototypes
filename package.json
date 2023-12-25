@@ -1,6 +1,6 @@
 {
   "name": "@anmiles/prototypes",
-  "version": "5.2.1",
+  "version": "5.2.2",
   "description": "Provides prototype extensions for native JS modules",
   "keywords": [
     "prototype",
