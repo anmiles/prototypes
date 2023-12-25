@@ -13,9 +13,9 @@ declare global {
 
 export {};
 
-Object.ownKeys = <K extends string, V>(obj: Record<K, V>, allKeys: readonly K[] = Object.keys(obj) as Array<keyof typeof obj>) => {
+Object.ownKeys = <K extends string, V>(obj: Record<K, V>, allKeys?: readonly K[]) => {
 	function isOwnKey(key: keyof any): key is K {
-		return allKeys.includes(key as K);
+		return allKeys?.includes(key as K) ?? true;
 	}
 
 	return Object.keys(obj).filter<K>(isOwnKey);
