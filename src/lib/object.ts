@@ -8,7 +8,7 @@ declare global {
 
     interface Object {
         fill: <K extends string, V>(keys: readonly K[], getValue: (key: K) => V) => Record<K, V>;
-        ownKeys: <K extends string, V>(obj: Record<K, V>, allKeys?: readonly K[]) => K[],
+        ownKeys: <K extends string, V>(obj: Record<K, V> | Partial<Record<K, V>>, allKeys?: readonly K[]) => K[],
     }
 }
 
@@ -24,7 +24,7 @@ Object.fill = <K extends string, V>(keys: readonly K[], getValue: (key: K) => V)
 	return obj;
 };
 
-Object.ownKeys = <K extends string, V>(obj: Record<K, V>, allKeys?: readonly K[]): K[] => {
+Object.ownKeys = <K extends string, V>(obj: Record<K, V> | Partial<Record<K, V>>, allKeys?: readonly K[]): K[] => {
 	function isOwnKey(key: keyof any): key is K {
 		return allKeys?.includes(key as K) ?? true;
 	}

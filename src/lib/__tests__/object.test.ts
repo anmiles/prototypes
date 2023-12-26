@@ -32,34 +32,42 @@ describe('src/lib/object', function() {
 
 	describe('ownKeys', function() {
 		it('should return all keys of an object declared with const assertion', function() {
-			const objType = {
-				a : 1,
-				b : 2,
-				c : 3,
-			} as const;
-
-			const keys = Object.ownKeys(objType);
-			expect(keys).toEqual([ 'a', 'b', 'c' ]);
-			expectTypeOf(keys).toEqualTypeOf<Array<keyof typeof objType>>();
-		});
-
-		it('should return filtered keys of an object casted to previously declared type', function() {
-			const objType = {
-				a : 1,
-				b : 2,
-				c : 3,
-			} as const;
-
 			const obj = {
 				a : 1,
 				b : 2,
 				c : 3,
-				d : 4,
-			} as typeof objType;
+			} as const;
 
-			const keys = Object.ownKeys(obj, Object.keys(objType) as Array<keyof typeof objType>);
+			const keys = Object.ownKeys(obj);
 			expect(keys).toEqual([ 'a', 'b', 'c' ]);
-			expectTypeOf(keys).toEqualTypeOf<Array<keyof typeof objType>>();
+			expectTypeOf(keys).toEqualTypeOf<Array<keyof typeof obj>>();
+		});
+
+		it('should return filtered keys of an object casted to previously declared type', function() {
+			const obj = {
+				a : 1,
+				b : 2,
+				c : 3,
+			} as const;
+
+			const declaredKeys = [ 'a', 'b' ] as const;
+
+			const keys = Object.ownKeys(obj, declaredKeys);
+			expect(keys).toEqual([ 'a', 'b' ]);
+			expectTypeOf(keys).toEqualTypeOf<Array<'a' | 'b'>>();
+		});
+
+		it('should return actual keys in partial object', function() {
+			const obj = {
+				a : 1,
+				b : 2,
+			} as const;
+
+			const declaredKeys = [ 'a', 'b', 'c' ] as const;
+
+			const keys = Object.ownKeys(obj, declaredKeys);
+			expect(keys).toEqual([ 'a', 'b' ]);
+			expectTypeOf(keys).toEqualTypeOf<Array<'a' | 'b' | 'c'>>();
 		});
 	});
 });
