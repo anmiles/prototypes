@@ -2,6 +2,21 @@ import { expectTypeOf } from 'expect-type';
 import '../object';
 
 describe('src/lib/object', function() {
+	describe('fill', () => {
+		it('should create an object with specified keys and specified default values', function() {
+			const keys  = [ 'key1', 'key2', 'key3' ] as const;
+			const value = { name : 'value' };
+
+			const obj = Object.fill(keys, value);
+
+			expect(obj).toEqual({
+				key1 : { name : 'value' },
+				key2 : { name : 'value' },
+				key3 : { name : 'value' },
+			});
+		});
+	});
+
 	describe('ownKeys', function() {
 		it('should return all keys of an object declared with const assertion', function() {
 			const objType = {
