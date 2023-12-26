@@ -7,12 +7,25 @@ describe('src/lib/object', function() {
 			const keys  = [ 'key1', 'key2', 'key3' ] as const;
 			const value = { name : 'value' };
 
-			const obj = Object.fill(keys, value);
+			const obj = Object.fill(keys, () => value);
 
 			expect(obj).toEqual({
 				key1 : { name : 'value' },
 				key2 : { name : 'value' },
 				key3 : { name : 'value' },
+			});
+		});
+
+		it('should calculate default values from keys', function() {
+			const keys     = [ 'key1', 'key2', 'key3' ] as const;
+			const getValue = (key: typeof keys[number]) => ({ name : 'value', key });
+
+			const obj = Object.fill(keys, getValue);
+
+			expect(obj).toEqual({
+				key1 : { name : 'value', key : 'key1' },
+				key2 : { name : 'value', key : 'key2' },
+				key3 : { name : 'value', key : 'key3' },
 			});
 		});
 	});

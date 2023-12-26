@@ -7,18 +7,18 @@ declare global {
     }
 
     interface Object {
-        fill: <K extends string, V>(keys: readonly K[], value: V) => Record<K, V>;
+        fill: <K extends string, V>(keys: readonly K[], getValue: (key: K) => V) => Record<K, V>;
         ownKeys: <K extends string, V>(obj: Record<K, V>, allKeys?: readonly K[]) => K[],
     }
 }
 
 export {};
 
-Object.fill = <K extends string, V>(keys: readonly K[], value: V): Record<K, V> => {
+Object.fill = <K extends string, V>(keys: readonly K[], getValue: (key: K) => V): Record<K, V> => {
 	const obj = {} as Record<K, V>;
 
 	for (const key of keys) {
-		obj[key] = value;
+		obj[key] = getValue(key);
 	}
 
 	return obj;
