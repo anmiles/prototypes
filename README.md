@@ -46,8 +46,15 @@ Provides prototype extensions for native JS modules
 - `fs.getJSONAsync` - asynchronously get JSON from file with asynchronous falling back and asynchronous validation
 - `fs.readTSV` - read and parse TSV from file
 - `fs.writeTSV` - write TSV to file
+- `fs.joinPath` - join two portions of file path using specified or default separator and return the path as typed as possible
 - `fs.recurse` - recursively traverse directory for specified depth and apply callbacks for files (with optionally specified extension), directories and links
 - `fs.size` - recursively calculates get directory size
+
+Also `joinPath` and `recurse` functions are introduced in `fs.posix` and `fs.win32` namespaces.
+Path separator is explicitly specified and cannot be directly passed there.
+- `fs.posix.joinPath` and `fs.posix.recurse` use '/' separator regardless of path.sep in runtime
+- `fs.win32.joinPath` and `fs.win32.recurse` use '\\' separator regardless of path.sep in runtime
+Inspired by `path.posix` and `path.win32`.
 
 ### process
 

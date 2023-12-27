@@ -16,10 +16,54 @@ declare module 'fs' {
 	export function readTSV(filename: string): Array<Record<string, any>>;
 	export function writeTSV(filename: string, data: Array<Record<string, any>>): void;
 
-	export function recurse(root: string, callback: FSCallback, options?: { depth?: number, ext?: string }): void;
-	export function recurse(root: string, callbacks: { dir?: FSCallback, file?: FSCallback, link?: FSCallback }, options?: { depth?: number, ext?: string }): void;
+	export function joinPath<
+		T1 extends string,
+		T2 extends string,
+		TSep extends typeof path.sep = typeof path.sep
+	>(parent: T1, child: T2, options?: { sep?: TSep }): `${T1}${TSep}${T2}`;
+
+	export function recurse<T extends string, TSep extends typeof path.sep = typeof path.sep>(
+		root: T,
+		callback: RecurseCallback<T, TSep>,
+		options?: { depth?: number, ext?: string, sep?: TSep }
+	): void;
+	export function recurse<T extends string, TSep extends typeof path.sep = typeof path.sep>(
+		root: T,
+		callbacks: { dir?: RecurseCallback<T, TSep>, file?: RecurseCallback<T, TSep>, link?: RecurseCallback<T, TSep> },
+		options?: { depth?: number, ext?: string, sep?: TSep }
+	): void;
 
 	export function size(root: string, ignores?: string[]): number;
+
+	export namespace posix {
+		export function joinPath<T1 extends string, T2 extends string>(parent: T1, child: T2): `${T1}${'/'}${T2}`;
+
+		export function recurse<T extends string>(
+			root: T,
+			callback: RecurseCallback<T, '/'>,
+			options?: { depth?: number, ext?: string }
+		): void;
+		export function recurse<T extends string>(
+			root: T,
+			callbacks: { dir?: RecurseCallback<T, '/'>, file?: RecurseCallback<T, '/'>, link?: RecurseCallback<T, '/'> },
+			options?: { depth?: number, ext?: string }
+		): void;
+	}
+
+	export namespace win32 {
+		export function joinPath<T1 extends string, T2 extends string>(parent: T1, child: T2): `${T1}${'\\'}${T2}`;
+
+		export function recurse<T extends string>(
+			root: T,
+			callback: RecurseCallback<T, '\\'>,
+			options?: { depth?: number, ext?: string }
+		): void;
+		export function recurse<T extends string>(
+			root: T,
+			callbacks: { dir?: RecurseCallback<T, '\\'>, file?: RecurseCallback<T, '\\'>, link?: RecurseCallback<T, '\\'> },
+			options?: { depth?: number, ext?: string }
+		): void;
+	}
 }
 
 declare module 'fs/promises' {
@@ -35,10 +79,54 @@ declare module 'fs/promises' {
 	export function readTSV(filename: string): Array<Record<string, any>>;
 	export function writeTSV(filename: string, data: Array<Record<string, any>>): void;
 
-	export function recurse(root: string, callback: FSCallback, options?: { depth?: number, ext?: string }): void;
-	export function recurse(root: string, callbacks: { dir?: FSCallback, file?: FSCallback, link?: FSCallback }, options?: { depth?: number, ext?: string }): void;
+	export function joinPath<
+		T1 extends string,
+		T2 extends string,
+		TSep extends typeof path.sep = typeof path.sep
+	>(parent: T1, child: T2, options?: { sep?: TSep }): `${T1}${TSep}${T2}`;
+
+	export function recurse<T extends string, TSep extends typeof path.sep = typeof path.sep>(
+		root: T,
+		callback: RecurseCallback<T, TSep>,
+		options?: { depth?: number, ext?: string, sep?: TSep }
+	): void;
+	export function recurse<T extends string, TSep extends typeof path.sep = typeof path.sep>(
+		root: T,
+		callbacks: { dir?: RecurseCallback<T, TSep>, file?: RecurseCallback<T, TSep>, link?: RecurseCallback<T, TSep> },
+		options?: { depth?: number, ext?: string, sep?: TSep }
+	): void;
 
 	export function size(root: string, ignores?: string[]): number;
+
+	export namespace posix {
+		export function joinPath<T1 extends string, T2 extends string>(parent: T1, child: T2): `${T1}${'/'}${T2}`;
+
+		export function recurse<T extends string>(
+			root: T,
+			callback: RecurseCallback<T, '/'>,
+			options?: { depth?: number, ext?: string }
+		): void;
+		export function recurse<T extends string>(
+			root: T,
+			callbacks: { dir?: RecurseCallback<T, '/'>, file?: RecurseCallback<T, '/'>, link?: RecurseCallback<T, '/'> },
+			options?: { depth?: number, ext?: string }
+		): void;
+	}
+
+	export namespace win32 {
+		export function joinPath<T1 extends string, T2 extends string>(parent: T1, child: T2): `${T1}${'\\'}${T2}`;
+
+		export function recurse<T extends string>(
+			root: T,
+			callback: RecurseCallback<T, '\\'>,
+			options?: { depth?: number, ext?: string }
+		): void;
+		export function recurse<T extends string>(
+			root: T,
+			callbacks: { dir?: RecurseCallback<T, '\\'>, file?: RecurseCallback<T, '\\'>, link?: RecurseCallback<T, '\\'> },
+			options?: { depth?: number, ext?: string }
+		): void;
+	}
 }
 
 fs.ensureDir = fsPromises.ensureDir = function(dirPath: string, throwIfNotExists = false): string {
@@ -148,21 +236,43 @@ fs.writeTSV = fsPromises.writeTSV = function(filename: string, data: Array<Recor
 	fs.writeFileSync(filename, iconv.encode(tsv, 'cp1251'));
 };
 
-type FSCallback = (filepath: string, filename: string, dirent: fs.Dirent) => void;
+fs.joinPath = function<
+	T1 extends string,
+	T2 extends string,
+	TSep extends typeof path.sep = typeof path.sep
+>(parent: T1, child: T2, options?: { sep?: TSep }): `${T1}${TSep}${T2}` {
+	return `${parent}${options?.sep ?? path.sep as TSep}${child}`;
+};
 
-function recurse(root: string, callback: FSCallback, options?: { depth?: number, ext?: string }): void;
-function recurse(root: string, callbacks: { dir?: FSCallback, file?: FSCallback, link?: FSCallback }, options?: { depth?: number, ext?: string }): void;
-function recurse(root: string, arg: FSCallback | { dir?: FSCallback, file?: FSCallback, link?: FSCallback }, { depth = 0, ext = '' }: { depth?: number, ext?: string } = {}): void {
+type RecurseCallback<T extends string, TSep extends typeof path.sep> = (filepath: `${T}${TSep}${string}`, filename: string, dirent: fs.Dirent) => void;
+
+function recurse<T extends string, TSep extends typeof path.sep = typeof path.sep>(
+	root: T,
+	callback: RecurseCallback<T, TSep>,
+	options?: { depth?: number, ext?: string, sep?: TSep }
+): void;
+function recurse<T extends string, TSep extends typeof path.sep = typeof path.sep>(
+	root: T,
+	callbacks: { dir?: RecurseCallback<T, TSep>, file?: RecurseCallback<T, TSep>, link?: RecurseCallback<T, TSep> },
+	options?: { depth?: number, ext?: string, sep?: TSep }
+): void;
+function recurse<T extends string, TSep extends typeof path.sep>(
+	root: T,
+	arg: RecurseCallback<T, TSep> | { dir?: RecurseCallback<T, TSep>, file?: RecurseCallback<T, TSep>, link?: RecurseCallback<T, TSep> },
+	options: { depth?: number, ext?: string, sep?: TSep } = {},
+): void {
 	if (!fs.existsSync(root)) {
 		return;
 	}
 
+	const { depth, ext, sep } = { depth : 0, ext : '', sep : path.sep as TSep, ...options };
+
 	if (typeof arg === 'function') {
-		return recurse(root, { dir : arg, file : arg, link : arg });
+		return recurse(root, { dir : arg, file : arg, link : arg }, options);
 	}
 
 	for (const dirent of fs.readdirSync(root, { withFileTypes : true })) {
-		const fullName = path.join(root, dirent.name);
+		const fullName = fs.joinPath<typeof root, string, TSep>(root, dirent.name, { sep });
 
 		if (dirent.name === 'System Volume Information') {
 			continue;
@@ -172,7 +282,7 @@ function recurse(root: string, arg: FSCallback | { dir?: FSCallback, file?: FSCa
 			arg.dir && arg.dir(fullName, dirent.name, dirent);
 
 			if (!(depth === 1)) {
-				recurse(fullName, arg, { depth : depth - 1, ext });
+				recurse(fullName, arg, { depth : depth - 1, ext, sep });
 			}
 		} else if (dirent.isSymbolicLink()) {
 			arg.link && arg.link(fullName, dirent.name, dirent);
@@ -188,14 +298,14 @@ fs.size = fsPromises.size = function(root: string, ignores?: string[]): number {
 	let size = 0;
 
 	fs.recurse(root, {
-		dir : (filepath, filename) => {
+		dir : (filepath: string, filename: string) => {
 			if (ignores?.includes(filename)) {
 				return;
 			}
 
 			size += fs.size(filepath, ignores);
 		},
-		file : (filepath, filename) => {
+		file : (filepath: string, filename: string) => {
 			if (ignores?.includes(filename)) {
 				return;
 			}
@@ -206,5 +316,65 @@ fs.size = fsPromises.size = function(root: string, ignores?: string[]): number {
 
 	return size;
 };
+
+fs.posix = fs.posix || {};
+
+fs.posix.joinPath = function<T1 extends string, T2 extends string>(parent: T1, child: T2): `${T1}${'/'}${T2}` {
+	return fs.joinPath(parent, child, { sep : '/' });
+};
+
+function posixRecurse<T extends string>(
+	root: T,
+	callback: RecurseCallback<T, '/'>,
+	options?: { depth?: number, ext?: string }
+): void;
+function posixRecurse<T extends string>(
+	root: T,
+	callbacks: { dir?: RecurseCallback<T, '/'>, file?: RecurseCallback<T, '/'>, link?: RecurseCallback<T, '/'> },
+	options?: { depth?: number, ext?: string }
+): void;
+function posixRecurse<T extends string>(
+	root: T,
+	arg: RecurseCallback<T, '/'> | { dir?: RecurseCallback<T, '/'>, file?: RecurseCallback<T, '/'>, link?: RecurseCallback<T, '/'> },
+	options: { depth?: number, ext?: string } = {},
+): void {
+	if (typeof arg === 'function') {
+		fs.recurse<T, '/'>(root, arg, { ...options, sep : '/' });
+	} else {
+		fs.recurse<T, '/'>(root, arg, { ...options, sep : '/' });
+	}
+}
+
+fs.posix.recurse = posixRecurse;
+
+fs.win32 = fs.win32 || {};
+
+fs.win32.joinPath = function<T1 extends string, T2 extends string>(parent: T1, child: T2): `${T1}${'\\'}${T2}` {
+	return fs.joinPath(parent, child, { sep : '\\' });
+};
+
+function win32Recurse<T extends string>(
+	root: T,
+	callback: RecurseCallback<T, '\\'>,
+	options?: { depth?: number, ext?: string }
+): void;
+function win32Recurse<T extends string>(
+	root: T,
+	callbacks: { dir?: RecurseCallback<T, '\\'>, file?: RecurseCallback<T, '\\'>, link?: RecurseCallback<T, '\\'> },
+	options?: { depth?: number, ext?: string }
+): void;
+function win32Recurse<T extends string>(
+	root: T,
+	arg: RecurseCallback<T, '\\'> | { dir?: RecurseCallback<T, '\\'>, file?: RecurseCallback<T, '\\'>, link?: RecurseCallback<T, '\\'> },
+	options: { depth?: number, ext?: string } = {},
+): void {
+	if (typeof arg === 'function') {
+		fs.recurse<T, '\\'>(root, arg, { ...options, sep : '\\' });
+	} else {
+		fs.recurse<T, '\\'>(root, arg, { ...options, sep : '\\' });
+	}
+}
+
+fs.win32.recurse = win32Recurse;
 
 export {};
