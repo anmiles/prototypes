@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.0.0](../../tags/v6.0.0) - 2023-12-28
+### Changed
+- `fs.ensureDir` and `fs.ensureFile` return action result and do not throw if not exists
+
 ## [5.4.0](../../tags/v5.4.0) - 2023-12-28
 ### Added
 - `fs.joinPath` joins two portions of file path using specified or default separator and return the path as typed as possible

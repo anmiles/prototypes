@@ -4,7 +4,7 @@ import iconv from 'iconv-lite';
 import '../fs';
 
 jest.mock<Partial<typeof fs>>('fs', () => ({
-	existsSync : jest.fn().mockImplementation(() => exists),
+	existsSync : jest.fn().mockImplementation(() => fsExists),
 	lstatSync  : jest.fn().mockImplementation(() => ({
 		isFile      : () => isFile,
 		isDirectory : () => !isFile,
@@ -26,7 +26,7 @@ jest.mock<Partial<typeof path>>('path', () => ({
 const dirPath  = 'dirPath';
 const filePath = 'dirPath/filePath';
 let content: Buffer;
-let exists: boolean;
+let fsExists: boolean;
 let isFile: boolean;
 
 const separators = [
@@ -42,40 +42,41 @@ describe('src/lib/fs', function() {
 		});
 
 		it('should create empty dir if not exists', () => {
-			exists = false;
+			fsExists = false;
 
-			fs.ensureDir(dirPath);
+			const { created, exists } = fs.ensureDir(dirPath);
 
 			expect(fs.mkdirSync).toHaveBeenCalledWith(dirPath, { recursive : true });
+			expect(created).toBe(true);
+			expect(exists).toBe(true);
 		});
 
-		it('should throw if not exists and throwIfNotExists is true', () => {
-			exists = false;
+		it('should not create empty dir if not exists and create option is false', () => {
+			fsExists = false;
 
-			const func = () => fs.ensureDir(dirPath, true);
+			const { created, exists } = fs.ensureDir(dirPath, { create : false });
 
-			expect(func).toThrow(`${dirPath} does not exist`);
+			expect(fs.mkdirSync).not.toHaveBeenCalled();
+			expect(created).toBe(false);
+			expect(exists).toBe(false);
 		});
 
 		it('should not create empty dir if already exists', () => {
-			exists = true;
+			fsExists = true;
 
-			fs.ensureDir(dirPath);
+			const { created, exists } = fs.ensureDir(dirPath);
 
 			expect(fs.mkdirSync).not.toHaveBeenCalled();
+			expect(created).toBe(false);
+			expect(exists).toBe(true);
 		});
 
 		it('should throw if existing is a file', () => {
-			exists = true;
-			isFile = true;
+			fsExists = true;
+			isFile   = true;
 
 			expect(() => fs.ensureDir(dirPath)).toThrow('dirPath is a file, not a directory');
-		});
-
-		it('should return dirPath', () => {
-			const result = fs.ensureDir(dirPath);
-
-			expect(result).toEqual(dirPath);
+			expect(fs.mkdirSync).not.toHaveBeenCalled();
 		});
 	});
 
@@ -95,50 +96,52 @@ describe('src/lib/fs', function() {
 			ensureDirSpy.mockRestore();
 		});
 
-		it('should ensure parent dir', () => {
-			exists = false;
+		[ undefined, {}, { create : true }, { create : false } ].forEach((options) => {
+			it(`should call ensureDir to ensure parent dir and pass ${JSON.stringify(options)} options`, () => {
+				fsExists = false;
 
-			fs.ensureFile(filePath);
+				fs.ensureFile(filePath, options);
 
-			expect(fs.ensureDir).toHaveBeenCalledWith('dirPath');
+				expect(fs.ensureDir).toHaveBeenCalledWith('dirPath', options);
+			});
 		});
 
 		it('should create empty file if not exists', () => {
-			exists = false;
+			fsExists = false;
 
-			fs.ensureFile(filePath);
+			const { created, exists } = fs.ensureFile(filePath);
 
 			expect(fs.writeFileSync).toHaveBeenCalledWith(filePath, '');
+			expect(created).toBe(true);
+			expect(exists).toBe(true);
 		});
 
-		it('should throw if not exists and throwIfNotExists is true', () => {
-			exists = false;
+		it('should not create empty files if not exists and create option is false', () => {
+			fsExists = false;
 
-			const func = () => fs.ensureFile(filePath, true);
+			const { created, exists } = fs.ensureFile(filePath, { create : false });
 
-			expect(func).toThrow(`${filePath} does not exist`);
+			expect(fs.writeFileSync).not.toHaveBeenCalled();
+			expect(created).toBe(false);
+			expect(exists).toBe(false);
 		});
 
 		it('should not create empty file if already exists', () => {
-			exists = true;
+			fsExists = true;
 
-			fs.ensureFile(filePath);
+			const { created, exists } = fs.ensureFile(filePath);
 
 			expect(fs.writeFileSync).not.toHaveBeenCalled();
+			expect(created).toBe(false);
+			expect(exists).toBe(true);
 		});
 
-		it('should throw if existing is a file', () => {
-			exists = true;
-			isFile = false;
+		it('should throw if existing is a directory', () => {
+			fsExists = true;
+			isFile   = false;
 
 			expect(() => fs.ensureFile(filePath)).toThrow('dirPath/filePath is a directory, not a file');
 			expect(fs.writeFileSync).not.toHaveBeenCalled();
-		});
-
-		it('should return filePath', () => {
-			const result = fs.ensureFile(filePath);
-
-			expect(result).toEqual(filePath);
 		});
 	});
 
@@ -218,7 +221,7 @@ describe('src/lib/fs', function() {
 		} ].forEach(({ block, func, createCallback, validateCallback }) => {
 			describe(`${block}`, () => {
 				it('should read json and validate it if file exists', async () => {
-					exists = true;
+					fsExists = true;
 
 					await func(filePath, createCallback, validateCallback);
 
@@ -227,7 +230,7 @@ describe('src/lib/fs', function() {
 				});
 
 				it('should call createCallback if file exists but json is not valid', async () => {
-					exists = true;
+					fsExists = true;
 					validateCallback.mockReturnValueOnce({ isValid : false });
 
 					await func(filePath, createCallback, validateCallback);
@@ -237,7 +240,7 @@ describe('src/lib/fs', function() {
 				});
 
 				it('should not call createCallback if file exists and validation function is not passed', async () => {
-					exists = true;
+					fsExists = true;
 
 					await func(filePath, createCallback);
 
@@ -246,7 +249,7 @@ describe('src/lib/fs', function() {
 				});
 
 				it('should call createCallback if file does not exist', async () => {
-					exists = false;
+					fsExists = false;
 
 					await func(filePath, createCallback, validateCallback);
 
@@ -255,7 +258,7 @@ describe('src/lib/fs', function() {
 				});
 
 				it('should not write fallback JSON back if file exists and json is valid', async () => {
-					exists = true;
+					fsExists = true;
 
 					await func(filePath, createCallback, validateCallback);
 
@@ -263,7 +266,7 @@ describe('src/lib/fs', function() {
 				});
 
 				it('should write fallback JSON back if file exists but json is not valid', async () => {
-					exists = true;
+					fsExists = true;
 					validateCallback.mockReturnValueOnce({ isValid : false });
 
 					await func(filePath, createCallback, validateCallback);
@@ -272,7 +275,7 @@ describe('src/lib/fs', function() {
 				});
 
 				it('should write fallback JSON back if file not exists', async () => {
-					exists = false;
+					fsExists = false;
 
 					await func(filePath, createCallback, validateCallback);
 
@@ -280,7 +283,7 @@ describe('src/lib/fs', function() {
 				});
 
 				it('should return JSON if file exists and json is valid', async () => {
-					exists = true;
+					fsExists = true;
 
 					const result = await func(filePath, createCallback, validateCallback);
 
@@ -288,7 +291,7 @@ describe('src/lib/fs', function() {
 				});
 
 				it('should return fallback JSON if file exists but json is not valid', async () => {
-					exists = true;
+					fsExists = true;
 					validateCallback.mockReturnValueOnce({ isValid : false });
 
 					const result = await func(filePath, createCallback, validateCallback);
@@ -297,7 +300,7 @@ describe('src/lib/fs', function() {
 				});
 
 				it('should return fallback JSON if file not exists', async () => {
-					exists = false;
+					fsExists = false;
 
 					const result = await func(filePath, createCallback, validateCallback);
 
@@ -305,7 +308,7 @@ describe('src/lib/fs', function() {
 				});
 
 				it('should throw if file exists but json is not valid and created json is not valid too', async () => {
-					exists = false;
+					fsExists = false;
 					validateCallback.mockReturnValue({ isValid : false });
 
 					await expect(() => func(filePath, createCallback, validateCallback)).rejects.toEqual('JSON created for dirPath/filePath is not valid');
@@ -314,7 +317,7 @@ describe('src/lib/fs', function() {
 				});
 
 				it('should throw with validation error if file exists but json is not valid and created json is not valid too', async () => {
-					exists = false;
+					fsExists = false;
 					validateCallback.mockReturnValue({ isValid : false, validationError : 'validation error' });
 
 					await expect(() => func(filePath, createCallback, validateCallback)).rejects.toEqual('JSON created for dirPath/filePath is not valid: validation error');

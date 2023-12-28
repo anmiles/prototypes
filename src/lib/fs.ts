@@ -4,8 +4,8 @@ import path from 'path';
 import iconv from 'iconv-lite';
 
 declare module 'fs' {
-	export function ensureDir(dirPath: string, throwIfNotExists?: boolean): string;
-	export function ensureFile(dirPath: string, throwIfNotExists?: boolean): string;
+	export function ensureDir(dirPath: string, options?: { create?: boolean }): { created: boolean, exists: boolean };
+	export function ensureFile(dirPath: string, options?: { create?: boolean }): { created: boolean, exists: boolean };
 
 	export function readJSON<T = any>(filename: string): T;
 	export function writeJSON<T = any>(filename: string, json: T): void;
@@ -67,8 +67,8 @@ declare module 'fs' {
 }
 
 declare module 'fs/promises' {
-	export function ensureDir(dirPath: string, throwIfNotExists?: boolean): string;
-	export function ensureFile(dirPath: string, throwIfNotExists?: boolean): string;
+	export function ensureDir(dirPath: string, options?: { create?: boolean }): { created: boolean, exists: boolean };
+	export function ensureFile(dirPath: string, options?: { create?: boolean }): { created: boolean, exists: boolean };
 
 	export function readJSON<T = any>(filename: string): T;
 	export function writeJSON<T = any>(filename: string, json: T): void;
@@ -129,36 +129,44 @@ declare module 'fs/promises' {
 	}
 }
 
-fs.ensureDir = fsPromises.ensureDir = function(dirPath: string, throwIfNotExists = false): string {
-	if (!fs.existsSync(dirPath)) {
-		if (throwIfNotExists) {
-			throw `${dirPath} does not exist`;
-		}
+fs.ensureDir = fsPromises.ensureDir = function(dirPath: string, options?: { create?: boolean }): { created: boolean, exists: boolean } {
+	const { create } = { create : true, ...options };
 
-		fs.mkdirSync(dirPath, { recursive : true });
+	if (!fs.existsSync(dirPath)) {
+		if (create) {
+			fs.mkdirSync(dirPath, { recursive : true });
+			return { created : true, exists : true };
+		} else {
+			return { created : false, exists : false };
+		}
 	} else {
 		if (fs.lstatSync(dirPath).isFile()) {
 			throw `${dirPath} is a file, not a directory`;
 		}
+
+		return { created : false, exists : true };
 	}
-	return dirPath;
 };
 
-fs.ensureFile = fsPromises.ensureFile = function(filePath: string, throwIfNotExists = false): string {
-	fs.ensureDir(path.dirname(filePath));
+fs.ensureFile = fsPromises.ensureFile = function(filePath: string, options?: { create?: boolean }): { created: boolean, exists: boolean } {
+	const { create } = { create : true, ...options };
+
+	fs.ensureDir(path.dirname(filePath), options);
 
 	if (!fs.existsSync(filePath)) {
-		if (throwIfNotExists) {
-			throw `${filePath} does not exist`;
+		if (create) {
+			fs.writeFileSync(filePath, '');
+			return { created : true, exists : true };
+		} else {
+			return { created : false, exists : false };
 		}
-
-		fs.writeFileSync(filePath, '');
 	} else {
 		if (fs.lstatSync(filePath).isDirectory()) {
 			throw `${filePath} is a directory, not a file`;
 		}
+
+		return { created : false, exists : true };
 	}
-	return filePath;
 };
 
 fs.readJSON = fsPromises.readJSON = function<T = any>(filename: string): T {

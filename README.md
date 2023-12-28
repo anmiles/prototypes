@@ -38,8 +38,8 @@ Provides prototype extensions for native JS modules
 
 ### fs and fs/promises
 
-- `fs.ensureDir` - check if dir exists and is directory; creates it or throws if not exists
-- `fs.ensureFile` - check if file exists and is file; creates it or throws if not exists
+- `fs.ensureDir` - check and if dir exists and is a directory; optionally create if not exists
+- `fs.ensureFile` - check if file exists and is a file; optionally create if not exists
 - `fs.readJSON` - read and parse JSON from file
 - `fs.writeJSON` - write JSON to file
 - `fs.getJSON` - get JSON from file with falling back and validation
