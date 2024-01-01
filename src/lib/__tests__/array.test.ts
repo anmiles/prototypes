@@ -1,63 +1,63 @@
 import '../array';
 
-describe('src/lib/array', function() {
-	describe('unique', function() {
-		it('should remove duplicates', function() {
+describe('src/lib/array', () => {
+	describe('unique', () => {
+		it('should remove duplicates', () => {
 			expect([ 1, '2', 3, '2', 1 ].unique()).toEqual([ 1, '2', 3 ]);
 		});
 
-		it('should be type-sensitive', function() {
+		it('should be type-sensitive', () => {
 			expect([ 1, '2', 3, 2, 1 ].unique()).toEqual([ 1, '2', 3, 2 ]);
 			expect([ 1, '2', 3, 2, 1 ].unique()).not.toEqual([ 1, '2', 3 ]);
 		});
 	});
 
-	describe('equals', function() {
-		it('should return false on different length', function() {
+	describe('equals', () => {
+		it('should return false on different length', () => {
 			expect([ 1, '2', 3 ].equals([ 1, '2' ])).toEqual(false);
 		});
 
-		it('should return false on different items', function() {
+		it('should return false on different items', () => {
 			expect([ 1, '2', 3 ].equals([ 1, '2', 4 ])).toEqual(false);
 			expect([ 1, '2', 3 ].equals([ 1, '2', '3' ])).toEqual(false);
 		});
 
-		it('should return true on equal items', function() {
+		it('should return true on equal items', () => {
 			expect([ 1, '2', 3 ].equals([ 1, '2', 3 ])).toEqual(true);
 		});
 	});
 
-	describe('indexFieldOf', function() {
-		it('should search the array of objects for an object which field equals to specified term', function() {
+	describe('indexFieldOf', () => {
+		it('should search the array of objects for an object which field equals to specified term', () => {
 			expect([ { a : 2 }, { a : 3 }, { a : 5 }, { a : 3 } ].indexFieldOf('a', 3)).toEqual(1);
 		});
 
-		it('should skip specified number of array elements', function() {
+		it('should skip specified number of array elements', () => {
 			expect([ { a : 'b' }, { a : 'c' }, { a : 'd' }, { a : 'c' } ].indexFieldOf('a', 'c', 2)).toEqual(3);
 		});
 
-		it('should work with chain of fields', function() {
+		it('should work with chain of fields', () => {
 			expect([ { a : { n : true } }, { b : 0 }, { a : { n : false } }, { a : { m : true } } ].indexFieldOf([ 'a', 'n' ], false)).toEqual(2);
 		});
 
-		it('should return -1 if nothing found', function() {
+		it('should return -1 if nothing found', () => {
 			expect([ { a : { n : true } }, { b : 0 }, { a : { n : false } }, { a : { m : true } } ].indexFieldOf([ 'a', 'm' ], false)).toEqual(-1);
 		});
 	});
 
-	describe('sum', function() {
-		it('should sum all values of array', function() {
+	describe('sum', () => {
+		it('should sum all values of array', () => {
 			expect([ 1, 2, 4, 8 ].sum()).toEqual(15);
 		});
 	});
 
-	describe('sort', function() {
-		it('should sort array using default sort function', function() {
+	describe('sort', () => {
+		it('should sort array using default sort function', () => {
 			expect([ 1, 4, 6, 2, 5, 7 ].sort()).toEqual([ 1, 2, 4, 5, 6, 7 ]);
 		});
 
-		it('should sort array using default sort function if argument is function', function() {
-			expect([ 1, 4, 6, 2, 5, 7 ].sort(function(a: number, b: number) {
+		it('should sort array using default sort function if argument is function', () => {
+			expect([ 1, 4, 6, 2, 5, 7 ].sort(function sort(a: number, b: number) {
 				if (a % 2 === 0 && b % 2 !== 0) {
 					return 1;
 				}
@@ -70,19 +70,19 @@ describe('src/lib/array', function() {
 			})).toEqual([ 1, 5, 7, 4, 6, 2 ]);
 		});
 
-		it('should sort array alphabetically ascending if no arguments specified', function() {
+		it('should sort array alphabetically ascending if no arguments specified', () => {
 			expect([ 'banana', 'orange', 'apple' ].sort()).toEqual([ 'apple', 'banana', 'orange' ]);
 		});
 
-		it('should sort array alphabetically ascending if true specified', function() {
+		it('should sort array alphabetically ascending if true specified', () => {
 			expect([ 'banana', 'orange', 'apple' ].sort(true)).toEqual([ 'apple', 'banana', 'orange' ]);
 		});
 
-		it('should sort array alphabetically descending if false specified', function() {
+		it('should sort array alphabetically descending if false specified', () => {
 			expect([ 'banana', 'orange', 'apple' ].sort(false)).toEqual([ 'orange', 'banana', 'apple' ]);
 		});
 
-		it('should sort array of objects by field', function() {
+		it('should sort array of objects by field', () => {
 			expect([
 				{ a : 4, b : 2 },
 				{ a : 2, b : 4 },
@@ -96,7 +96,7 @@ describe('src/lib/array', function() {
 			]);
 		});
 
-		it('should sort array of objects by multiple fields', function() {
+		it('should sort array of objects by multiple fields', () => {
 			expect([
 				{ a : 4, b : 2 },
 				{ a : 2, b : 4 },
@@ -110,7 +110,7 @@ describe('src/lib/array', function() {
 			]);
 		});
 
-		it('should treat dot-containing path as field name if it exists', function() {
+		it('should treat dot-containing path as field name if it exists', () => {
 			expect([
 				{ 'a' : 4, 'b.c' : 2 },
 				{ 'a' : 2, 'b.c' : 4 },
@@ -124,7 +124,7 @@ describe('src/lib/array', function() {
 			]);
 		});
 
-		it('should treat dot-containing path as combined path if it does not exist', function() {
+		it('should treat dot-containing path as combined path if it does not exist', () => {
 			expect([
 				{ a : 4, b : { c : 2 } },
 				{ a : 2, b : { c : 4 } },
@@ -138,7 +138,7 @@ describe('src/lib/array', function() {
 			]);
 		});
 
-		it('should sort array of objects by multiple fields with direction', function() {
+		it('should sort array of objects by multiple fields with direction', () => {
 			expect([
 				{ a : 4, b : 2 },
 				{ a : 2, b : 4 },
@@ -152,7 +152,7 @@ describe('src/lib/array', function() {
 			]);
 		});
 
-		it('should sort different cases if arguments are strings', function() {
+		it('should sort different cases if arguments are strings', () => {
 			expect([
 				{ a : 'D', b : 'd' },
 				{ a : 'D', b : 'D' },
@@ -166,7 +166,7 @@ describe('src/lib/array', function() {
 			]);
 		});
 
-		it('should not be affected by empty options', function() {
+		it('should not be affected by empty options', () => {
 			expect([
 				{ a : 'D', b : 'd' },
 				{ a : 'D', b : 'D' },
@@ -180,7 +180,7 @@ describe('src/lib/array', function() {
 			]);
 		});
 
-		it('should treat null as empty string if arguments are strings or nullish', function() {
+		it('should treat null as empty string if arguments are strings or nullish', () => {
 			expect([
 				{ a : 'D', b : 'd' },
 				{ a : 'D', b : null },
@@ -194,7 +194,7 @@ describe('src/lib/array', function() {
 			]);
 		});
 
-		it('should treat undefined as empty string if arguments are strings or nullish', function() {
+		it('should treat undefined as empty string if arguments are strings or nullish', () => {
 			expect([
 				{ a : 'D', b : 'd' },
 				{ a : 'D', b : undefined },
@@ -208,7 +208,7 @@ describe('src/lib/array', function() {
 			]);
 		});
 
-		it('should sort different cases with ignoreCase', function() {
+		it('should sort different cases with ignoreCase', () => {
 			expect([
 				{ a : 'D', b : 'b' },
 				{ a : 'D', b : 'D' },
@@ -222,7 +222,7 @@ describe('src/lib/array', function() {
 			]);
 		});
 
-		it('should treat null or undefined as empty string with ignoreCase', function() {
+		it('should treat null or undefined as empty string with ignoreCase', () => {
 			expect([
 				{ a : undefined, b : 'b' },
 				{ a : 'D', b : null },
@@ -236,7 +236,7 @@ describe('src/lib/array', function() {
 			]);
 		});
 
-		it('should use find and replace', function() {
+		it('should use find and replace', () => {
 			expect([
 				{ a : 'a2', b : 'b2' },
 				{ a : 'a2', b : 'b1' },
@@ -250,7 +250,7 @@ describe('src/lib/array', function() {
 			]);
 		});
 
-		it('should treat null or undefined as empty string when find and replace', function() {
+		it('should treat null or undefined as empty string when find and replace', () => {
 			expect([
 				{ a : 'a2', b : 'b2' },
 				{ a : 'a2', b : 'b1' },

@@ -35,7 +35,7 @@ const separators = [
 	{ ns : null, sep : path.sep },
 ] as const;
 
-describe('src/lib/fs', function() {
+describe('src/lib/fs', () => {
 	describe('ensureDir', () => {
 		beforeEach(() => {
 			isFile = false;
@@ -145,7 +145,7 @@ describe('src/lib/fs', function() {
 		});
 	});
 
-	describe('readJSON', function() {
+	describe('readJSON', () => {
 		it('should read json from file', () => {
 			content      = Buffer.from('{"key1": "value", "key2": 5}', 'utf8');
 			const result = fs.readJSON(filePath);
@@ -155,7 +155,7 @@ describe('src/lib/fs', function() {
 		});
 	});
 
-	describe('writeJSON', function() {
+	describe('writeJSON', () => {
 		it('should write json to file with BOM', () => {
 			const json = { key1 : 'value', key2 : 5 };
 
@@ -328,7 +328,7 @@ describe('src/lib/fs', function() {
 		});
 	});
 
-	describe('readTSV', function() {
+	describe('readTSV', () => {
 		it('should read tsv from file with cp1251 encoding', () => {
 			content = iconv.encode('first name\tage\tdescription\r\nAlice\t25\tEntertainer\r\nJohn\t40\tSpecial guest\r\n', 'cp1251');
 
@@ -360,7 +360,7 @@ describe('src/lib/fs', function() {
 		});
 	});
 
-	describe('writeTSV', function() {
+	describe('writeTSV', () => {
 		it('should write tsv buffer into file with cp1251 encoding', () => {
 
 			const data = [
@@ -406,7 +406,7 @@ describe('src/lib/fs', function() {
 		});
 	});
 
-	describe('recurse', function() {
+	describe('recurse', () => {
 		type FSItem = { name: string, fullName: string, type: keyof Parameters<typeof fs.recurse>[1] };
 		type FSFile = FSItem & { type: 'file', size: number };
 		type FSLink = FSItem & { type: 'link', target: string };

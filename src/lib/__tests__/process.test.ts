@@ -38,8 +38,8 @@ beforeEach(() => {
 	hasStderr = true;
 });
 
-describe('src/lib/process', function() {
-	describe('start', function() {
+describe('src/lib/process', () => {
+	describe('start', () => {
 		describe('spawn', () => {
 			it('should call cmd to execute command with default working directory', async () => {
 				const promise = process.start('command');

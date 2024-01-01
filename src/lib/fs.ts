@@ -129,7 +129,7 @@ declare module 'fs/promises' {
 	}
 }
 
-fs.ensureDir = fsPromises.ensureDir = function(dirPath: string, options?: { create?: boolean }): { created: boolean, exists: boolean } {
+fs.ensureDir = fsPromises.ensureDir = function ensureDir(dirPath: string, options?: { create?: boolean }): { created: boolean, exists: boolean } {
 	const { create } = { create : true, ...options };
 
 	if (!fs.existsSync(dirPath)) {
@@ -148,7 +148,7 @@ fs.ensureDir = fsPromises.ensureDir = function(dirPath: string, options?: { crea
 	}
 };
 
-fs.ensureFile = fsPromises.ensureFile = function(filePath: string, options?: { create?: boolean }): { created: boolean, exists: boolean } {
+fs.ensureFile = fsPromises.ensureFile = function ensureFile(filePath: string, options?: { create?: boolean }): { created: boolean, exists: boolean } {
 	const { create } = { create : true, ...options };
 
 	fs.ensureDir(path.dirname(filePath), options);
@@ -221,7 +221,7 @@ fs.getJSONAsync = fsPromises.getJSONAsync = async function<T>(filename: string, 
 	throw [ err, validationError ].filter((s) => s).join(': ');
 };
 
-fs.readTSV = fsPromises.readTSV = function(filename: string): Array<Record<string, any>> {
+fs.readTSV = fsPromises.readTSV = function readTSV(filename: string): Array<Record<string, any>> {
 	const tsv     = iconv.decode(fs.readFileSync(filename), 'cp1251');
 	const lines   = tsv.trim().split('\r\n').map((line) => line.split('\t'));
 	const headers = lines.shift() as string[];
@@ -231,7 +231,7 @@ fs.readTSV = fsPromises.readTSV = function(filename: string): Array<Record<strin
 	return arr;
 };
 
-fs.writeTSV = fsPromises.writeTSV = function(filename: string, data: Array<Record<string, any>>): void {
+fs.writeTSV = fsPromises.writeTSV = function writeTSV(filename: string, data: Array<Record<string, any>>): void {
 	let tsv = '';
 
 	if (data.length > 0) {
@@ -302,7 +302,7 @@ function recurse<T extends string, TSep extends typeof path.sep>(
 
 fs.recurse = fsPromises.recurse = recurse;
 
-fs.size = fsPromises.size = function(root: string, ignores?: string[]): number {
+fs.size = fsPromises.size = function size(root: string, ignores?: string[]): number {
 	let size = 0;
 
 	fs.recurse(root, {

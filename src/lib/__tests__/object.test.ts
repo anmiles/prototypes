@@ -1,9 +1,9 @@
 import { expectTypeOf } from 'expect-type';
 import '../object';
 
-describe('src/lib/object', function() {
+describe('src/lib/object', () => {
 	describe('fill', () => {
-		it('should create an object with specified keys and specified default values', function() {
+		it('should create an object with specified keys and specified default values', () => {
 			const keys  = [ 'key1', 'key2', 'key3' ] as const;
 			const value = { name : 'value' };
 
@@ -16,7 +16,7 @@ describe('src/lib/object', function() {
 			});
 		});
 
-		it('should calculate default values from keys', function() {
+		it('should calculate default values from keys', () => {
 			const keys     = [ 'key1', 'key2', 'key3' ] as const;
 			const getValue = (key: typeof keys[number]) => ({ name : 'value', key });
 
@@ -30,8 +30,8 @@ describe('src/lib/object', function() {
 		});
 	});
 
-	describe('ownKeys', function() {
-		it('should return all keys of an object declared with const assertion', function() {
+	describe('ownKeys', () => {
+		it('should return all keys of an object declared with const assertion', () => {
 			const obj = {
 				a : 1,
 				b : 2,
@@ -43,7 +43,7 @@ describe('src/lib/object', function() {
 			expectTypeOf(keys).toEqualTypeOf<Array<keyof typeof obj>>();
 		});
 
-		it('should return filtered keys of an object casted to previously declared type', function() {
+		it('should return filtered keys of an object casted to previously declared type', () => {
 			const obj = {
 				a : 1,
 				b : 2,
@@ -57,7 +57,7 @@ describe('src/lib/object', function() {
 			expectTypeOf(keys).toEqualTypeOf<Array<'a' | 'b'>>();
 		});
 
-		it('should return actual keys in partial object', function() {
+		it('should return actual keys in partial object', () => {
 			const obj = {
 				a : 1,
 				b : 2,

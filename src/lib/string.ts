@@ -12,21 +12,21 @@ declare global {
 
 export {};
 
-String.prototype.toUpperFirstLetter = function() {
+String.prototype.toUpperFirstLetter = function toUpperFirstLetter(this: string) {
 	if (this.length === 0) {
 		return this;
 	}
 	return this[0].toUpperCase() + this.substring(1, this.length);
 };
 
-String.prototype.toLowerFirstLetter = function() {
+String.prototype.toLowerFirstLetter = function toLowerFirstLetter(this: string) {
 	if (this.length === 0) {
 		return this;
 	}
 	return this[0].toLowerCase() + this.substring(1, this.length);
 };
 
-String.prototype.htmlEscape = function() {
+String.prototype.htmlEscape = function htmlEscape(this: string) {
 	return this
 		.replace(/&/gm, '&amp;')
 		.replace(/\xa0/gm, '&nbsp;')
@@ -38,15 +38,15 @@ String.prototype.htmlEscape = function() {
 	;
 };
 
-String.prototype.urlEscape = function() {
+String.prototype.urlEscape = function urlEscape(this: string) {
 	return this.replace(/([^A-Za-z0-9]+)/gim, '-').toLowerCase();
 };
 
-String.prototype.regexEscape = function() {
+String.prototype.regexEscape = function regexEscape(this: string) {
 	return this.replace(/[.\-$^*?+\\/\\|[\]{}()]/g, '\\$&');
 };
 
-String.prototype.beautify = function() {
+String.prototype.beautify = function beautify(this: string) {
 	return this
 		.replace(/([\s\u200b\u200c\xa0]|&nbsp;)+/g, ' ') // unify spaces
 		.replace(/[\u2024\u3002]/g, '.') // unify dots
@@ -72,7 +72,7 @@ String.prototype.beautify = function() {
 	;
 };
 
-String.prototype.toFilename = function() {
+String.prototype.toFilename = function toFilename(this: string) {
 	return this.beautify()
 		.replace(/[/\\|]/g, '-') // replace slashes with hyphen
 		.replace(/: /g, ' - ') // replace colon as word edge with hyphen

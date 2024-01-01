@@ -11,7 +11,7 @@ declare global {
 
 export {};
 
-process.start = function(command: string, args: string[] = [], options?: Parameters<typeof spawn>[2], output?: { stdout?: boolean | ((data: string) => void), stderr?: boolean | ((data: string) => void)}): Promise<number> {
+process.start = function start(command: string, args: string[] = [], options?: Parameters<typeof spawn>[2], output?: { stdout?: boolean | ((data: string) => void), stderr?: boolean | ((data: string) => void)}): Promise<number> {
 	const cwd = command.includes('/') || command.includes('\\')
 		? path.dirname(command)
 		: path.resolve();

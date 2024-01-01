@@ -7,7 +7,7 @@ declare global {
 
 export {};
 
-Number.prototype.case = function(zero: string, one: string, two: string): string {
+Number.prototype.case = function _case(this: number, zero: string, one: string, two: string): string {
 	let num = Math.abs(this);
 	num    %= 100;
 
@@ -28,7 +28,7 @@ Number.prototype.case = function(zero: string, one: string, two: string): string
 	return zero;
 };
 
-Number.prototype.pad = function(before: number, after?: number): string {
+Number.prototype.pad = function pad(this: number, before: number, after?: number): string {
 	const arr     = this.toString().split('.');
 	let leftPart  = arr[0];
 	let rightPart = arr[1] || '';

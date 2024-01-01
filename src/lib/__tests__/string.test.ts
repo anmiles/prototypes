@@ -18,41 +18,41 @@ const testTextToFilename = ' ...text  ​‌&nbsp;․。…-·­‐‑‒–—
 const beautifiedText   = ' ........---------------\'\'\'""""""::??**//\\\\||[][][]23.25.5.75ssIIii';
 const preparedFilename = 'text ...-\'\'\' .-s- -()[][][]23.25.5.75asseeeiiizIIЙйЁё a-b key - value ,!_@&#%+=°©首';
 
-describe('src/lib/string', function() {
-	describe('toUpperFirstLetter', function() {
-		it('should make first letter uppercase', function() {
+describe('src/lib/string', () => {
+	describe('toUpperFirstLetter', () => {
+		it('should make first letter uppercase', () => {
 			expect('test'.toUpperFirstLetter()).toEqual('Test');
 		});
 
-		it('should return itself on empty string', function() {
+		it('should return itself on empty string', () => {
 			expect(''.toUpperFirstLetter()).toEqual('');
 		});
 	});
 
-	describe('toLowerFirstLetter', function() {
-		it('should make first letter lowercase', function() {
+	describe('toLowerFirstLetter', () => {
+		it('should make first letter lowercase', () => {
 			expect('TEST'.toLowerFirstLetter()).toEqual('tEST');
 		});
 
-		it('should return itself on empty string', function() {
+		it('should return itself on empty string', () => {
 			expect(''.toLowerFirstLetter()).toEqual('');
 		});
 	});
 
-	describe('htmlEscape', function() {
-		it('should escape the html-sensitive string', function() {
+	describe('htmlEscape', () => {
+		it('should escape the html-sensitive string', () => {
 			expect(test.stringValue.htmlEscape()).toEqual(escapedHTML);
 		});
 	});
 
-	describe('urlEscape', function() {
-		it('should replace all non-alphanumeric characters with hyphen and converts to lowercase', function() {
+	describe('urlEscape', () => {
+		it('should replace all non-alphanumeric characters with hyphen and converts to lowercase', () => {
 			expect(test.stringValue.urlEscape()).toEqual(escapedUrl);
 		});
 	});
 
-	describe('regexEscape', function() {
-		it('should escape the regular expression', function() {
+	describe('regexEscape', () => {
+		it('should escape the regular expression', () => {
 			expect(test.stringValue.regexEscape()).toEqual(escapedRegex);
 		});
 	});
