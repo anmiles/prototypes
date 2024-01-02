@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import iconv from 'iconv-lite';
 import '../fs';
+import { FSDir, Files, mockFS } from '@anmiles/jest-extensions';
 
 jest.mock<Partial<typeof fs>>('fs', () => ({
 	existsSync : jest.fn().mockImplementation(() => fsExists),
@@ -407,83 +408,57 @@ describe('src/lib/fs', () => {
 	});
 
 	describe('recurse', () => {
-		type FSItem = { name: string, fullName: string, type: keyof Parameters<typeof fs.recurse>[1] };
-		type FSFile = FSItem & { type: 'file', size: number };
-		type FSLink = FSItem & { type: 'link', target: string };
-		type FSDir = FSItem & { type: 'dir', items?: (FSDir | FSFile | FSLink)[] };
-
 		const callbacks = {
 			file : jest.fn(),
 			dir  : jest.fn(),
 			link : jest.fn(),
 		};
 
-		type AllFiles = Record<string, FSFile | FSDir | FSLink>;
-
-		function processItem<TItem extends FSFile | FSDir | FSLink>(item: TItem, sep: typeof path.sep, prefix?: string, allFiles: AllFiles = {}): AllFiles {
-			const fullName = prefix ? `${prefix}${sep}${item.name}` : item.name;
-			item.fullName  = fullName;
-
-			if (item.type === 'dir') {
-				item.items?.map((childItem) => processItem(childItem, sep, item.fullName, allFiles));
-			}
-
-			allFiles[fullName] = item;
-			return allFiles;
-		}
-
 		separators.map(({ ns, sep }) => {
 			const recurse      = ns ? fs[ns].recurse : fs.recurse;
 			const describeSpec = [ 'fs', ns ].filter((s) => s).join('.');
 
 			const fsTree: FSDir = {
-				name     : 'C:',
-				type     : 'dir',
-				fullName : '',
-				items    : [
-					{ name     : 'ProgramData',
-						type     : 'dir',
-						fullName : '',
-						items    : [
-							{ name     : 'MySoftware',
-								type     : 'dir',
-								fullName : '',
-								items    : [
-									{ name : 'errors.log', size : 10, type : 'file', fullName : '' },
-									{ name : 'profile.dat', size : 20, type : 'file', fullName : '' },
+				name  : 'C:',
+				type  : 'dir',
+				items : [
+					{ name  : 'ProgramData',
+						type  : 'dir',
+						items : [
+							{ name  : 'MySoftware',
+								type  : 'dir',
+								items : [
+									{ name : 'errors.log', size : 10, type : 'file' },
+									{ name : 'profile.dat', size : 20, type : 'file' },
 								] },
-							{ name : 'Desktop', target : `C:${sep}Users${sep}Public${sep}Desktop`, type : 'link', fullName : '' },
+							{ name : 'Desktop', target : `C:${sep}Users${sep}Public${sep}Desktop`, type : 'link' },
 						] },
-					{ name : 'System Volume Information', type : 'dir', fullName : '' },
-					{ name     : 'Users',
-						type     : 'dir',
-						fullName : '',
-						items    : [
-							{ name     : 'Public',
-								type     : 'dir',
-								fullName : '',
-								items    : [
-									{ name : 'Desktop', type : 'dir', fullName : '' },
-									{ name     : 'Downloads',
-										type     : 'dir',
-										fullName : '',
-										items    : [
-											{ name : 'install.zip', size : 30, type : 'file', fullName : '' },
-											{ name : 'image.jpg', size : 40, type : 'file', fullName : '' },
+					{ name : 'System Volume Information', type : 'dir' },
+					{ name  : 'Users',
+						type  : 'dir',
+						items : [
+							{ name  : 'Public',
+								type  : 'dir',
+								items : [
+									{ name : 'Desktop', type : 'dir' },
+									{ name  : 'Downloads',
+										type  : 'dir',
+										items : [
+											{ name : 'install.zip', size : 30, type : 'file' },
+											{ name : 'image.jpg', size : 40, type : 'file' },
 										] },
-									{ name : 'desktop.ini', size : 50, type : 'file', fullName : '' },
-									{ name : 'ntuser.dat', size : 60, type : 'file', fullName : '' },
+									{ name : 'desktop.ini', size : 50, type : 'file' },
+									{ name : 'ntuser.dat', size : 60, type : 'file' },
 								] },
-							{ name : 'AllUsers', target : `C:${sep}ProgramData`, type : 'link', fullName : '' },
+							{ name : 'AllUsers', target : `C:${sep}ProgramData`, type : 'link' },
 						] },
-					{ name : 'pagefile.sys', size : 70, type : 'file', fullName : '' },
-					{ name : 'Documents and Settings', target : `C:${sep}Users`, type : 'link', fullName : '' },
+					{ name : 'pagefile.sys', size : 70, type : 'file' },
+					{ name : 'Documents and Settings', target : `C:${sep}Users`, type : 'link' },
 				],
 			};
 
 			describe(`${describeSpec}`, () => {
-				let allFiles: AllFiles;
-
+				let allFiles: Files;
 				let readdirSyncSpy: jest.SpyInstance;
 				let existsSyncSpy: jest.SpyInstance;
 
@@ -493,24 +468,11 @@ describe('src/lib/fs', () => {
 				});
 
 				beforeEach(() => {
-					readdirSyncSpy.mockImplementation((fullName: string, options?: { withFileTypes?: boolean }) => {
-						const fsDir = allFiles[fullName];
+					const { files, mock } = mockFS(fsTree, sep);
 
-						const result = fsDir.type !== 'dir'
-							? []
-							: fsDir.items?.map((item) => options?.withFileTypes ? {
-								name           : item.name,
-								isFile         : () => allFiles[item.fullName].type === 'file',
-								isDirectory    : () => allFiles[item.fullName].type === 'dir',
-								isSymbolicLink : () => allFiles[item.fullName].type === 'link',
-							} : item.name) || [];
-
-						return result;
-					});
-
-					existsSyncSpy.mockImplementation((fullName: string) => Object.keys(allFiles).includes(fullName));
-
-					allFiles = processItem(fsTree, sep);
+					allFiles = files;
+					existsSyncSpy.mockImplementation(mock.existsSync);
+					readdirSyncSpy.mockImplementation(mock.readdirSync);
 				});
 
 				afterAll(() => {
