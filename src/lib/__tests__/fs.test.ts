@@ -468,7 +468,7 @@ describe('src/lib/fs', () => {
 				});
 
 				beforeEach(() => {
-					const { files, mock } = mockFS(fsTree, sep);
+					const { files, mock } = mockFS([ fsTree ], sep);
 
 					allFiles = files;
 					existsSyncSpy.mockImplementation(mock.existsSync);
