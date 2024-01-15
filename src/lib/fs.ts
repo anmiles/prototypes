@@ -225,17 +225,33 @@ fs.readTSV = fsPromises.readTSV = function readTSV(filename: string): Array<Reco
 	const tsv     = iconv.decode(fs.readFileSync(filename), 'cp1251');
 	const lines   = tsv.trim().split('\r\n').map((line) => line.split('\t'));
 	const headers = lines.shift() as string[];
-	const arr     = lines.map((line) => line.reduce((obj, value, key) => {
-		obj[headers[key]] = value; return obj;
+
+	const arr = lines.map((line) => line.reduce((obj, value, index) => {
+		if (index >= headers.length) {
+			throw `Cannot index header for row #${index + 1} because only ${headers.length} headers detected`;
+		}
+
+		const header = headers[index];
+
+		if (header) {
+			obj[header] = value;
+		} else {
+			throw `Header #${index + 1} is empty`;
+		}
+
+		return obj;
 	}, {} as Record<string, any>));
+
 	return arr;
 };
 
 fs.writeTSV = fsPromises.writeTSV = function writeTSV(filename: string, data: Array<Record<string, any>>): void {
 	let tsv = '';
 
-	if (data.length > 0) {
-		const headers = Object.keys(data[0]);
+	const firstLine = data[0];
+
+	if (firstLine) {
+		const headers = Object.keys(firstLine);
 		const lines   = data.map((item) => headers.map((field) => item[field]));
 		lines.unshift(headers);
 		tsv = lines.map((line) => line.join('\t')).join('\r\n');
@@ -325,7 +341,7 @@ fs.size = fsPromises.size = function size(root: string, ignores?: string[]): num
 	return size;
 };
 
-fs.posix = fs.posix || {};
+fs.posix = fs.posix || {} as typeof fs.posix;
 
 fs.posix.joinPath = function<T1 extends string, T2 extends string>(parent: T1, child: T2): `${T1}${'/'}${T2}` {
 	return fs.joinPath(parent, child, { sep : '/' });
@@ -355,7 +371,7 @@ function posixRecurse<T extends string>(
 
 fs.posix.recurse = posixRecurse;
 
-fs.win32 = fs.win32 || {};
+fs.win32 = fs.win32 || {} as typeof fs.win32;
 
 fs.win32.joinPath = function<T1 extends string, T2 extends string>(parent: T1, child: T2): `${T1}${'\\'}${T2}` {
 	return fs.joinPath(parent, child, { sep : '\\' });

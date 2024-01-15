@@ -2,13 +2,13 @@ declare global {
     interface Array<T> {
         filter<S extends T>(
             predicate: (this: void, value: T, index: number, obj: T[]) => value is S,
-            thisArg?: any
+            thisArg?: any,
         ): S[];
     }
 
     interface Object {
         fill: <K extends string, V>(keys: readonly K[], getValue: (key: K) => V) => Record<K, V>;
-        ownKeys: <K extends string, V>(obj: Record<K, V> | Partial<Record<K, V>>, allKeys?: readonly K[]) => K[],
+        ownKeys: <K extends string, V>(obj: Record<K, V> | Partial<Record<K, V>>, allKeys?: readonly K[]) => K[];
     }
 }
 

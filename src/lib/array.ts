@@ -42,8 +42,8 @@ Array.prototype.indexFieldOf = function indexFieldOf<T extends Record<string, an
 	for (let i = Math.max(0, skip); i < this.length; i++) {
 		let val = this[i];
 
-		for (let j = 0; j < fields.length; j++) {
-			val = val[fields[j]];
+		for (const field of fields) {
+			val = val?.[field];
 
 			if (typeof val === 'undefined') {
 				break;
@@ -64,20 +64,26 @@ Array.prototype.sum = function sum<T extends number>(this: Array<T>): number {
 	}, 0);
 };
 
-(function(originalSort) {
+type OriginalSort<T> = (this: Array<T>, compareFn?: (a: T, b: T) => number) => T[];
+
+(<T>(originalSort: OriginalSort<T>) => {
 	function bothAreStringLike(val1: any, val2: any) {
 		return (typeof val1 === 'string' || val1 === null || val1 === undefined) && (typeof val2 === 'string' || val2 === null || val2 === undefined);
 	}
 
-	function sort<T>(this: Array<T>, compareFn?: ((a: T, b: T) => number) | undefined): Array<T>;
-	function sort<T>(this: Array<T>, direction: boolean, options?: { ignoreCase?: boolean, find?: string, replace?: string }): Array<T>;
-	function sort<T>(this: Array<T>, field: string, options?: { ignoreCase?: boolean, find?: string, replace?: string }): Array<T>;
-	function sort<T>(this: Array<T>, fields: string[], options?: { ignoreCase?: boolean, find?: string, replace?: string }): Array<T>;
-	function sort<T>(this: Array<T>, fields: Record<string, boolean>, options?: { ignoreCase?: boolean, find?: string, replace?: string }): Array<T>;
-	function sort<T>(this: Array<T>, arg: ((a: T, b: T) => number) | boolean | string | string[] | Record<string, boolean> | undefined, options: { ignoreCase?: boolean, find?: string, replace?: string } = {}): Array<T> {
+	function sort(this: Array<T>, compareFn?: ((a: T, b: T) => number) | undefined): Array<T>;
+	function sort(this: Array<T>, direction: boolean, options?: { ignoreCase?: boolean, find?: string, replace?: string }): Array<T>;
+	function sort(this: Array<T>, field: string, options?: { ignoreCase?: boolean, find?: string, replace?: string }): Array<T>;
+	function sort(this: Array<T>, fields: string[], options?: { ignoreCase?: boolean, find?: string, replace?: string }): Array<T>;
+	function sort(this: Array<T>, fields: Record<string, boolean>, options?: { ignoreCase?: boolean, find?: string, replace?: string }): Array<T>;
+	function sort(this: Array<T>, arg: ((a: T, b: T) => number) | boolean | string | string[] | Record<string, boolean> | undefined, options: { ignoreCase?: boolean, find?: string, replace?: string } = {}): Array<T> {
 		const array = this as Array<T>;
 
-		if (typeof arg === 'function' || typeof arg === 'undefined') {
+		if (typeof arg === 'undefined') {
+			return originalSort.call(this);
+		}
+
+		if (typeof arg === 'function') {
 			return originalSort.call(this, arg);
 		}
 

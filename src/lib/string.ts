@@ -13,17 +13,22 @@ declare global {
 export {};
 
 String.prototype.toUpperFirstLetter = function toUpperFirstLetter(this: string) {
-	if (this.length === 0) {
-		return this;
+	const firstLetter = this[0];
+
+	if (!firstLetter) {
+		return '';
 	}
-	return this[0].toUpperCase() + this.substring(1, this.length);
+
+	return firstLetter.toUpperCase() + this.substring(1, this.length);
 };
 
 String.prototype.toLowerFirstLetter = function toLowerFirstLetter(this: string) {
-	if (this.length === 0) {
+	const firstLetter = this[0];
+
+	if (!firstLetter) {
 		return this;
 	}
-	return this[0].toLowerCase() + this.substring(1, this.length);
+	return firstLetter.toLowerCase() + this.substring(1, this.length);
 };
 
 String.prototype.htmlEscape = function htmlEscape(this: string) {

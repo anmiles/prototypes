@@ -13,7 +13,7 @@ jest.mock<Partial<typeof fs>>('fs', () => ({
 	readdirSync   : jest.fn(),
 	readFileSync  : jest.fn().mockImplementation(() => content),
 	mkdirSync     : jest.fn(),
-	writeFileSync : jest.fn().mockImplementation((file: any, data: string) => {
+	writeFileSync : jest.fn().mockImplementation((_file: any, data: string) => {
 		content = Buffer.from(data);
 	}),
 }));
@@ -359,6 +359,18 @@ describe('src/lib/fs', () => {
 			expect(result).toEqual([]);
 			expect(fs.readFileSync).toHaveBeenCalledWith(filePath);
 		});
+
+		it('should throw if amount of headers is less than amount of columns', () => {
+			content = iconv.encode('first name\tage\r\nAlice\t25\tEntertainer\r\nJohn\t40\tSpecial guest\r\n', 'cp1251');
+
+			expect(() => fs.readTSV(filePath)).toThrow('Cannot index header for row #3 because only 2 headers detected');
+		});
+
+		it('should throw if header is empty', () => {
+			content = iconv.encode('first name\t\tdescription\r\nAlice\t25\tEntertainer\r\nJohn\t40\tSpecial guest\r\n', 'cp1251');
+
+			expect(() => fs.readTSV(filePath)).toThrow('Header #2 is empty');
+		});
 	});
 
 	describe('writeTSV', () => {
@@ -543,7 +555,7 @@ describe('src/lib/fs', () => {
 					});
 
 					it('should do nothing if root does not exist', () => {
-						recurse(`C:${sep}wrongpath`, callbacks.file);
+						recurse(`C:${sep}wrong${sep}path`, callbacks.file);
 
 						expect(callbacks.file).not.toHaveBeenCalled();
 						expect(readdirSyncSpy).not.toHaveBeenCalled();
@@ -671,6 +683,11 @@ describe('src/lib/fs', () => {
 						beforeEach(() => {
 							lstatSyncSpy.mockImplementation((filepath) => {
 								const item = allFiles[filepath];
+
+								if (!item) {
+									throw `There is no ${filepath} in allFiles`;
+								}
+
 								return { size : item.type === 'file' ? item.size : 0 };
 							});
 						});
