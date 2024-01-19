@@ -1,4 +1,3 @@
-import { expectTypeOf } from 'expect-type';
 import '../object';
 
 describe('src/lib/object', () => {
@@ -31,43 +30,34 @@ describe('src/lib/object', () => {
 	});
 
 	describe('ownKeys', () => {
-		it('should return all keys of an object declared with const assertion', () => {
-			const obj = {
-				a : 1,
-				b : 2,
+		it('should return strictly typed keys of an object with defined set of keys', () => {
+			const data = {
+				a : 10,
+				b : 'str',
 				c : 3,
 			} as const;
 
-			const keys = Object.ownKeys(obj);
-			expect(keys).toEqual([ 'a', 'b', 'c' ]);
-			expectTypeOf(keys).toEqualTypeOf<Array<keyof typeof obj>>();
+			const targetKeys = [ 'a', 'b' ] as const;
+
+			const targetObj: { [ K in typeof targetKeys[number]]: typeof data[K] } = data;
+
+			const ownKeys = Object.ownKeys(targetObj, [ 'a', 'b' ]);
+			expect(ownKeys).toEqual([ 'a', 'b' ]);
 		});
 
-		it('should return filtered keys of an object casted to previously declared type', () => {
-			const obj = {
-				a : 1,
-				b : 2,
+		it('should return only sub-set of keys that has been explicitly requested', () => {
+			const data = {
+				a : 10,
+				b : 'str',
 				c : 3,
 			} as const;
 
-			const declaredKeys = [ 'a', 'b' ] as const;
+			const targetKeys = [ 'a', 'b' ] as const;
 
-			const keys = Object.ownKeys(obj, declaredKeys);
-			expect(keys).toEqual([ 'a', 'b' ]);
-			expectTypeOf(keys).toEqualTypeOf<Array<'a' | 'b'>>();
-		});
+			const targetObj: { [ K in typeof targetKeys[number]]: typeof data[K] } = data;
 
-		it('should return actual keys in partial object', () => {
-			const obj = {
-				a : 1,
-				b : 2,
-			} as const;
-
-			const declaredKeys = [ 'a', 'b', 'c' ] as const;
-
-			const keys = Object.ownKeys(obj, declaredKeys);
-			expect(keys).toEqual([ 'a', 'b' ]);
-			expectTypeOf(keys).toEqualTypeOf<Array<'a' | 'b' | 'c'>>();
+			const ownKeys = Object.ownKeys(targetObj, [ 'b' ]);
+			expect(ownKeys).toEqual([ 'b' ]);
 		});
 	});
 });

@@ -27,7 +27,6 @@
     "test:report:coverage": "nyc report --nycrc-path ./coverage.config.js -t ./coverage --report-dir ./coverage"
   },
   "dependencies": {
-    "expect-type": "^0.17.3",
     "iconv-lite": "^0.6.3"
   },
   "devDependencies": {
