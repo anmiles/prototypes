@@ -60,4 +60,36 @@ describe('src/lib/object', () => {
 			expect(ownKeys).toEqual([ 'b' ]);
 		});
 	});
+
+	describe('ownEntries', () => {
+		it('should return array of strictly typed entries of an object with defined set of keys', () => {
+			const data = {
+				a : 10,
+				b : 'str',
+				c : 3,
+			} as const;
+
+			const targetKeys = [ 'a', 'b' ] as const;
+
+			const targetObj: { [ K in typeof targetKeys[number]]: typeof data[K] } = data;
+
+			const ownEntries = Object.ownEntries(targetObj, [ 'a', 'b' ]);
+			expect(ownEntries).toEqual([ [ 'a', 10 ], [ 'b', 'str' ] ]);
+		});
+
+		it('should return only sub-set of entries if not all requested keys actually present', () => {
+			const data = {
+				a : 10,
+				b : 'str',
+				c : 3,
+			} as const;
+
+			const targetKeys = [ 'a', 'b' ] as const;
+
+			const targetObj: { [ K in typeof targetKeys[number]]: typeof data[K] } = data;
+
+			const ownEntries = Object.ownEntries(targetObj, [ 'b' ]);
+			expect(ownEntries).toEqual([ [ 'b', 'str' ] ]);
+		});
+	});
 });

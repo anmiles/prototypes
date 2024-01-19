@@ -9,6 +9,7 @@ declare global {
     interface Object {
         fill: <K extends string, V>(keys: readonly K[], getValue: (key: K) => V) => Record<K, V>;
         ownKeys: <K extends string, V>(obj: Record<K, V>, allKeys: string[] | readonly K[]) => K[];
+        ownEntries: <K extends string, V>(obj: Record<K, V>, allKeys: string[] | readonly K[]) => [K, V][];
     }
 }
 
@@ -31,3 +32,6 @@ Object.ownKeys = <K extends string, V>(obj: Record<K, V>, allKeys: K[]): K[] => 
 
 	return Object.keys(obj).filter<K>(isOwnKey);
 };
+
+Object.ownEntries = <K extends string, V>(obj: Record<K, V>, allKeys: K[]): [K, V][] => Object.ownKeys(obj, allKeys).map((key) => [ key, obj[key] ]);
+
