@@ -29,7 +29,7 @@ describe('src/lib/object', () => {
 		});
 	});
 
-	describe('ownKeys', () => {
+	describe('typedKeys', () => {
 		it('should return strictly typed keys of an object with defined set of keys', () => {
 			const data = {
 				a : 10,
@@ -41,8 +41,8 @@ describe('src/lib/object', () => {
 
 			const targetObj: { [ K in typeof targetKeys[number]]: typeof data[K] } = data;
 
-			const ownKeys = Object.ownKeys(targetObj, [ 'a', 'b' ]);
-			expect(ownKeys).toEqual([ 'a', 'b' ]);
+			const typedKeys = Object.typedKeys(targetObj, [ 'a', 'b' ]);
+			expect(typedKeys).toEqual([ 'a', 'b' ]);
 		});
 
 		it('should return only sub-set of keys that has been explicitly requested', () => {
@@ -56,12 +56,12 @@ describe('src/lib/object', () => {
 
 			const targetObj: { [ K in typeof targetKeys[number]]: typeof data[K] } = data;
 
-			const ownKeys = Object.ownKeys(targetObj, [ 'b' ]);
-			expect(ownKeys).toEqual([ 'b' ]);
+			const typedKeys = Object.typedKeys(targetObj, [ 'b' ]);
+			expect(typedKeys).toEqual([ 'b' ]);
 		});
 	});
 
-	describe('ownEntries', () => {
+	describe('typedEntries', () => {
 		it('should return array of strictly typed entries of an object with defined set of keys', () => {
 			const data = {
 				a : 10,
@@ -73,8 +73,8 @@ describe('src/lib/object', () => {
 
 			const targetObj: { [ K in typeof targetKeys[number]]: typeof data[K] } = data;
 
-			const ownEntries = Object.ownEntries(targetObj, [ 'a', 'b' ]);
-			expect(ownEntries).toEqual([ [ 'a', 10 ], [ 'b', 'str' ] ]);
+			const typedEntries = Object.typedEntries(targetObj, [ 'a', 'b' ]);
+			expect(typedEntries).toEqual([ [ 'a', 10 ], [ 'b', 'str' ] ]);
 		});
 
 		it('should return only sub-set of entries if not all requested keys actually present', () => {
@@ -88,8 +88,8 @@ describe('src/lib/object', () => {
 
 			const targetObj: { [ K in typeof targetKeys[number]]: typeof data[K] } = data;
 
-			const ownEntries = Object.ownEntries(targetObj, [ 'b' ]);
-			expect(ownEntries).toEqual([ [ 'b', 'str' ] ]);
+			const typedEntries = Object.typedEntries(targetObj, [ 'b' ]);
+			expect(typedEntries).toEqual([ [ 'b', 'str' ] ]);
 		});
 	});
 });
