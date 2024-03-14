@@ -43,7 +43,21 @@ String.prototype.htmlEscape = function htmlEscape(this: string) {
 };
 
 String.prototype.urlEscape = function urlEscape(this: string) {
-	return this.replace(/([^A-Za-z0-9]+)/gim, '-').toLowerCase();
+	const rus = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя';
+	const lat = 'abvgdeejziyklmnoprstufhccss-y-eua';
+	const num = '0123456789';
+
+	return this.split(/\s+/g).map((str) => Array.from(str.toString().toLowerCase()).map((symbol) => {
+		if (rus.includes(symbol)) {
+			return lat[rus.indexOf(symbol)];
+		}
+
+		if (lat.includes(symbol) || num.includes(symbol)) {
+			return symbol;
+		}
+
+		return '-';
+	}).join('')).join('-').replace(/-+/g, '-').replace(/^-/, '').replace(/-$/, '');
 };
 
 String.prototype.regexEscape = function regexEscape(this: string) {
