@@ -1,11 +1,12 @@
 import '../process';
-import path from 'path';
+import type path from 'path';
 import childProcess from 'child_process';
 import emitter from 'event-emitter';
 
+const pathOriginal = jest.requireActual<typeof path>('path');
 jest.mock<Partial<typeof path>>('path', () => ({
 	resolve : jest.fn().mockImplementation(() => '/cwd'),
-	dirname : jest.requireActual('path').dirname,
+	dirname : (_path: string) => pathOriginal.dirname(_path),
 }));
 
 jest.mock<Partial<typeof childProcess>>('child_process', () => ({
@@ -19,7 +20,7 @@ let hasStderr : boolean;
 const stdout = jest.fn();
 const stderr = jest.fn();
 
-function spawn() {
+function spawn(): childProcess.ChildProcess {
 	const instance = emitter() as ReturnType<typeof childProcess.spawn>;
 
 	if (hasStdout) {

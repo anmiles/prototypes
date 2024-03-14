@@ -31,7 +31,7 @@ Number.prototype.case = function _case(this: number, zero: string, one: string, 
 Number.prototype.pad = function pad(this: number, before: number, after?: number): string {
 	const arr     = this.toString().split('.');
 	let leftPart  = arr[0]!;
-	let rightPart = arr[1] || '';
+	let rightPart = arr[1] ?? '';
 
 	for (let i = leftPart.length; i < before; i++) {
 		leftPart = `0${leftPart}`;

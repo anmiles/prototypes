@@ -1,14 +1,14 @@
 {
-	"extends": "./node_modules/@anmiles/tsconfig/tsconfig.json",
+	"extends" : "./node_modules/@anmiles/tsconfig/tsconfig.json",
 
-	"compilerOptions": {
-		"rootDir": "./src",
-		"outDir": "./dist",
+	"compilerOptions" : {
+		"rootDir" : "./src",
+		"outDir" : "./dist",
 
-		"strictFunctionTypes": false,
+		"strictFunctionTypes" : false,
 	},
 
-	"include": [
+	"include" : [
 		"src",
 	],
 }

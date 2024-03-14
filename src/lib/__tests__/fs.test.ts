@@ -2,33 +2,12 @@ import fs from 'fs';
 import path from 'path';
 import iconv from 'iconv-lite';
 import '../fs';
-import { FSDir, Files, mockFS } from '@anmiles/jest-extensions';
+import mockFS from 'mock-fs';
 
-jest.mock<Partial<typeof fs>>('fs', () => ({
-	existsSync : jest.fn().mockImplementation(() => fsExists),
-	lstatSync  : jest.fn().mockImplementation(() => ({
-		isFile      : () => isFile,
-		isDirectory : () => !isFile,
-	})),
-	readdirSync   : jest.fn(),
-	readFileSync  : jest.fn().mockImplementation(() => content),
-	mkdirSync     : jest.fn(),
-	writeFileSync : jest.fn().mockImplementation((_file: any, data: string) => {
-		content = Buffer.from(data);
-	}),
-}));
-
-jest.mock<Partial<typeof path>>('path', () => ({
-	join    : jest.fn().mockImplementation((...paths: string[]) => paths.join('/')),
-	dirname : jest.fn().mockImplementation((arg) => arg.split('/').slice(0, -1).join('/')),
-	sep     : jest.requireActual('path').sep,
-}));
-
-const dirPath  = 'dirPath';
-const filePath = 'dirPath/filePath';
-let content: Buffer;
-let fsExists: boolean;
-let isFile: boolean;
+const mkdirSyncSpy     = jest.spyOn(fs, 'mkdirSync');
+const readdirSyncSpy   = jest.spyOn(fs, 'readdirSync');
+const readFileSyncSpy  = jest.spyOn(fs, 'readFileSync');
+const writeFileSyncSpy = jest.spyOn(fs, 'writeFileSync');
 
 const separators = [
 	{ ns : 'posix', sep : '/' },
@@ -36,123 +15,115 @@ const separators = [
 	{ ns : null, sep : path.sep },
 ] as const;
 
+const dirPath  = 'TEST:/dirPath';
+const filePath = 'TEST:/dirPath/filePath';
+
+beforeEach(() => {
+	mockFS({ 'TEST:' : {
+		'dirPath' : {
+			'filePath' : '',
+		},
+	} });
+});
+
 describe('src/lib/fs', () => {
 	describe('ensureDir', () => {
-		beforeEach(() => {
-			isFile = false;
-		});
 
 		it('should create empty dir if not exists', () => {
-			fsExists = false;
+			mockFS({});
 
 			const { created, exists } = fs.ensureDir(dirPath);
 
-			expect(fs.mkdirSync).toHaveBeenCalledWith(dirPath, { recursive : true });
+			expect(mkdirSyncSpy).toHaveBeenCalledWith(dirPath, { recursive : true });
 			expect(created).toBe(true);
 			expect(exists).toBe(true);
 		});
 
 		it('should not create empty dir if not exists and create option is false', () => {
-			fsExists = false;
+			mockFS({});
 
 			const { created, exists } = fs.ensureDir(dirPath, { create : false });
 
-			expect(fs.mkdirSync).not.toHaveBeenCalled();
+			expect(mkdirSyncSpy).not.toHaveBeenCalled();
 			expect(created).toBe(false);
 			expect(exists).toBe(false);
 		});
 
 		it('should not create empty dir if already exists', () => {
-			fsExists = true;
-
 			const { created, exists } = fs.ensureDir(dirPath);
 
-			expect(fs.mkdirSync).not.toHaveBeenCalled();
+			expect(mkdirSyncSpy).not.toHaveBeenCalled();
 			expect(created).toBe(false);
 			expect(exists).toBe(true);
 		});
 
 		it('should throw if existing is a file', () => {
-			fsExists = true;
-			isFile   = true;
+			mockFS({ [dirPath] : '' });
 
-			expect(() => fs.ensureDir(dirPath)).toThrow('dirPath is a file, not a directory');
-			expect(fs.mkdirSync).not.toHaveBeenCalled();
+			expect(() => fs.ensureDir(dirPath)).toThrow(`${dirPath} is a file, not a directory`);
+			expect(mkdirSyncSpy).not.toHaveBeenCalled();
 		});
 	});
 
 	describe('ensureFile', () => {
-		let ensureDirSpy: jest.SpyInstance;
-
-		beforeAll(() => {
-			ensureDirSpy = jest.spyOn(fs, 'ensureDir');
-		});
-
-		beforeEach(() => {
-			ensureDirSpy.mockImplementation();
-			isFile = true;
-		});
-
-		afterAll(() => {
-			ensureDirSpy.mockRestore();
-		});
-
 		[ undefined, {}, { create : true }, { create : false } ].forEach((options) => {
 			it(`should call ensureDir to ensure parent dir and pass ${JSON.stringify(options)} options`, () => {
-				fsExists = false;
+				const ensureDirSpy = jest.spyOn(fs, 'ensureDir');
 
 				fs.ensureFile(filePath, options);
 
-				expect(fs.ensureDir).toHaveBeenCalledWith('dirPath', options);
+				expect(ensureDirSpy).toHaveBeenCalledWith(dirPath, options);
+
+				ensureDirSpy.mockRestore();
 			});
 		});
 
 		it('should create empty file if not exists', () => {
-			fsExists = false;
+			mockFS({});
 
 			const { created, exists } = fs.ensureFile(filePath);
 
-			expect(fs.writeFileSync).toHaveBeenCalledWith(filePath, '');
+			expect(writeFileSyncSpy).toHaveBeenCalledWith(filePath, '');
 			expect(created).toBe(true);
 			expect(exists).toBe(true);
 		});
 
 		it('should not create empty files if not exists and create option is false', () => {
-			fsExists = false;
+			mockFS({});
 
 			const { created, exists } = fs.ensureFile(filePath, { create : false });
 
-			expect(fs.writeFileSync).not.toHaveBeenCalled();
+			expect(writeFileSyncSpy).not.toHaveBeenCalled();
 			expect(created).toBe(false);
 			expect(exists).toBe(false);
 		});
 
 		it('should not create empty file if already exists', () => {
-			fsExists = true;
+			mockFS({ [filePath] : '' });
 
 			const { created, exists } = fs.ensureFile(filePath);
 
-			expect(fs.writeFileSync).not.toHaveBeenCalled();
+			expect(writeFileSyncSpy).not.toHaveBeenCalled();
 			expect(created).toBe(false);
 			expect(exists).toBe(true);
 		});
 
 		it('should throw if existing is a directory', () => {
-			fsExists = true;
-			isFile   = false;
+			mockFS({ [filePath] : {} });
 
-			expect(() => fs.ensureFile(filePath)).toThrow('dirPath/filePath is a directory, not a file');
-			expect(fs.writeFileSync).not.toHaveBeenCalled();
+			expect(() => fs.ensureFile(filePath)).toThrow(`${filePath} is a directory, not a file`);
+			expect(writeFileSyncSpy).not.toHaveBeenCalled();
 		});
 	});
 
 	describe('readJSON', () => {
 		it('should read json from file', () => {
-			content      = Buffer.from('{"key1": "value", "key2": 5}', 'utf8');
+			mockFS({ [filePath] : Buffer.from('{"key1": "value", "key2": 5}', 'utf8') });
+
 			const result = fs.readJSON(filePath);
 
 			expect(result).toEqual({ key1 : 'value', key2 : 5 });
-			expect(fs.readFileSync).toHaveBeenCalledWith(filePath);
+			expect(readFileSyncSpy).toHaveBeenCalledWith(filePath);
 		});
 	});
 
@@ -162,7 +133,7 @@ describe('src/lib/fs', () => {
 
 			fs.writeJSON(filePath, json);
 
-			expect(fs.writeFileSync).toHaveBeenCalledWith(filePath, '\ufeff{\n    "key1": "value",\n    "key2": 5\n}');
+			expect(writeFileSyncSpy).toHaveBeenCalledWith(filePath, '\ufeff{\n    "key1": "value",\n    "key2": 5\n}');
 		});
 
 		it('should read written json back', () => {
@@ -176,22 +147,29 @@ describe('src/lib/fs', () => {
 	});
 
 	describe('getJSON', () => {
+		interface ValidationResult {
+			isValid          : boolean;
+			validationError? : string;
+		}
+
 		const json         = { key : 'value' };
 		const jsonString   = JSON.stringify(json, null, '    ');
 		const fallbackJSON = { fallbackKey : 'fallbackValue' };
 
-		const validateCallback      = jest.fn();
-		const validateCallbackAsync = jest.fn();
+		const encodedJSON = iconv.encode(jsonString, 'utf8');
 
-		const createCallback      = jest.fn();
-		const createCallbackAsync = jest.fn();
+		const validateCallback      = jest.fn() as jest.Mock<ValidationResult, unknown[]>;
+		const validateCallbackAsync = jest.fn() as jest.Mock<Promise<ValidationResult>, unknown[]>;
+
+		const createCallback      = jest.fn() as jest.Mock<unknown>;
+		const createCallbackAsync = jest.fn() as jest.Mock<Promise<unknown>>;
 
 		let readJSONSpy: jest.SpyInstance;
 		let writeJSONSpy: jest.SpyInstance;
 
 		beforeAll(() => {
 			readJSONSpy  = jest.spyOn(fs, 'readJSON');
-			writeJSONSpy = jest.spyOn(fs, 'writeJSON');
+			writeJSONSpy = jest.spyOn(fs, 'writeJSON').mockImplementation();
 		});
 
 		afterAll(() => {
@@ -200,7 +178,7 @@ describe('src/lib/fs', () => {
 		});
 
 		beforeEach(() => {
-			content = iconv.encode(jsonString, 'utf8');
+			mockFS({ [filePath] : encodedJSON });
 
 			validateCallback.mockReturnValue({ isValid : true });
 			validateCallbackAsync.mockResolvedValue({ isValid : true });
@@ -209,129 +187,212 @@ describe('src/lib/fs', () => {
 			createCallbackAsync.mockResolvedValue(fallbackJSON);
 		});
 
-		[ {
-			block : 'sync',
-			func  : async <T>(filename: string, createCallback: () => Exclude<T, Promise<any>>, validateCallback?: (json: T) => { isValid: boolean, validationError?: string }) => fs.getJSON(filename, createCallback, validateCallback),
-			createCallback,
-			validateCallback,
-		}, {
-			block            : 'async',
-			func             : fs.getJSONAsync,
-			createCallback   : createCallbackAsync,
-			validateCallback : validateCallbackAsync,
-		} ].forEach(({ block, func, createCallback, validateCallback }) => {
-			describe(`${block}`, () => {
-				it('should read json and validate it if file exists', async () => {
-					fsExists = true;
+		describe('getJSON', () => {
+			it('should read json and validate it if file exists', () => {
+				fs.getJSON(filePath, createCallback, validateCallback);
 
-					await func(filePath, createCallback, validateCallback);
+				expect(readJSONSpy).toHaveBeenCalledWith(filePath);
+				expect(validateCallback).toHaveBeenCalledWith(json);
+			});
 
-					expect(readJSONSpy).toHaveBeenCalledWith(filePath);
-					expect(validateCallback).toHaveBeenCalledWith(json);
-				});
+			it('should call createCallback if file exists but json is not valid', () => {
+				validateCallback.mockReturnValueOnce({ isValid : false });
 
-				it('should call createCallback if file exists but json is not valid', async () => {
-					fsExists = true;
-					validateCallback.mockReturnValueOnce({ isValid : false });
+				fs.getJSON(filePath, createCallback, validateCallback);
 
-					await func(filePath, createCallback, validateCallback);
+				expect(readJSONSpy).toHaveBeenCalledWith(filePath);
+				expect(createCallback).toHaveBeenCalledWith();
+			});
 
-					expect(readJSONSpy).toHaveBeenCalledWith(filePath);
-					expect(createCallback).toHaveBeenCalledWith();
-				});
+			it('should not call createCallback if file exists and validation function is not passed', () => {
+				fs.getJSON(filePath, createCallback);
 
-				it('should not call createCallback if file exists and validation function is not passed', async () => {
-					fsExists = true;
+				expect(readJSONSpy).toHaveBeenCalledWith(filePath);
+				expect(createCallback).not.toHaveBeenCalled();
+			});
 
-					await func(filePath, createCallback);
+			it('should call createCallback if file does not exist', () => {
+				mockFS({});
 
-					expect(readJSONSpy).toHaveBeenCalledWith(filePath);
-					expect(createCallback).not.toHaveBeenCalled();
-				});
+				fs.getJSON(filePath, createCallback, validateCallback);
 
-				it('should call createCallback if file does not exist', async () => {
-					fsExists = false;
+				expect(readJSONSpy).not.toHaveBeenCalled();
+				expect(createCallback).toHaveBeenCalledWith();
+			});
 
-					await func(filePath, createCallback, validateCallback);
+			it('should not write fallback JSON back if file exists and json is valid', () => {
+				fs.getJSON(filePath, createCallback, validateCallback);
 
-					expect(readJSONSpy).not.toHaveBeenCalled();
-					expect(createCallback).toHaveBeenCalledWith();
-				});
+				expect(writeJSONSpy).not.toHaveBeenCalled();
+			});
 
-				it('should not write fallback JSON back if file exists and json is valid', async () => {
-					fsExists = true;
+			it('should write fallback JSON back if file exists but json is not valid', () => {
+				validateCallback.mockReturnValueOnce({ isValid : false });
 
-					await func(filePath, createCallback, validateCallback);
+				fs.getJSON(filePath, createCallback, validateCallback);
 
-					expect(writeJSONSpy).not.toHaveBeenCalled();
-				});
+				expect(writeJSONSpy).toHaveBeenCalledWith(filePath, fallbackJSON);
+			});
 
-				it('should write fallback JSON back if file exists but json is not valid', async () => {
-					fsExists = true;
-					validateCallback.mockReturnValueOnce({ isValid : false });
+			it('should write fallback JSON back if file not exists', () => {
+				mockFS({});
 
-					await func(filePath, createCallback, validateCallback);
+				fs.getJSON(filePath, createCallback, validateCallback);
 
-					expect(writeJSONSpy).toHaveBeenCalledWith(filePath, fallbackJSON);
-				});
+				expect(writeJSONSpy).toHaveBeenCalledWith(filePath, fallbackJSON);
+			});
 
-				it('should write fallback JSON back if file not exists', async () => {
-					fsExists = false;
+			it('should return JSON if file exists and json is valid', () => {
+				const result = fs.getJSON(filePath, createCallback, validateCallback);
 
-					await func(filePath, createCallback, validateCallback);
+				expect(result).toEqual(json);
+			});
 
-					expect(writeJSONSpy).toHaveBeenCalledWith(filePath, fallbackJSON);
-				});
+			it('should return fallback JSON if file exists but json is not valid', () => {
+				validateCallback.mockReturnValueOnce({ isValid : false });
 
-				it('should return JSON if file exists and json is valid', async () => {
-					fsExists = true;
+				const result = fs.getJSON(filePath, createCallback, validateCallback);
 
-					const result = await func(filePath, createCallback, validateCallback);
+				expect(result).toEqual(fallbackJSON);
+			});
 
-					expect(result).toEqual(json);
-				});
+			it('should return fallback JSON if file not exists', () => {
+				mockFS({});
 
-				it('should return fallback JSON if file exists but json is not valid', async () => {
-					fsExists = true;
-					validateCallback.mockReturnValueOnce({ isValid : false });
+				const result = fs.getJSON(filePath, createCallback, validateCallback);
 
-					const result = await func(filePath, createCallback, validateCallback);
+				expect(result).toEqual(fallbackJSON);
+			});
 
-					expect(result).toEqual(fallbackJSON);
-				});
+			it('should throw if file exists but json is not valid and created json is not valid too', () => {
+				mockFS({});
+				validateCallback.mockReturnValue({ isValid : false });
 
-				it('should return fallback JSON if file not exists', async () => {
-					fsExists = false;
+				expect(() => fs.getJSON(filePath, createCallback, validateCallback))
+					.toThrow(new Error(`JSON created for ${filePath} is not valid`));
 
-					const result = await func(filePath, createCallback, validateCallback);
+				expect(writeJSONSpy).not.toHaveBeenCalled();
+			});
 
-					expect(result).toEqual(fallbackJSON);
-				});
+			it('should throw with validation error if file exists but json is not valid and created json is not valid too', () => {
+				mockFS({});
+				validateCallback.mockReturnValue({ isValid : false, validationError : 'validation error' });
 
-				it('should throw if file exists but json is not valid and created json is not valid too', async () => {
-					fsExists = false;
-					validateCallback.mockReturnValue({ isValid : false });
+				expect(() => fs.getJSON(filePath, createCallback, validateCallback))
+					.toThrow(new Error(`JSON created for ${filePath} is not valid: validation error`));
 
-					await expect(() => func(filePath, createCallback, validateCallback)).rejects.toEqual('JSON created for dirPath/filePath is not valid');
+				expect(writeJSONSpy).not.toHaveBeenCalled();
+			});
+		});
 
-					expect(writeJSONSpy).not.toHaveBeenCalled();
-				});
+		describe('getJSONAsync', () => {
+			it('should read json and validate it if file exists', async () => {
+				await fs.getJSONAsync(filePath, createCallbackAsync, validateCallbackAsync);
 
-				it('should throw with validation error if file exists but json is not valid and created json is not valid too', async () => {
-					fsExists = false;
-					validateCallback.mockReturnValue({ isValid : false, validationError : 'validation error' });
+				expect(readJSONSpy).toHaveBeenCalledWith(filePath);
+				expect(validateCallbackAsync).toHaveBeenCalledWith(json);
+			});
 
-					await expect(() => func(filePath, createCallback, validateCallback)).rejects.toEqual('JSON created for dirPath/filePath is not valid: validation error');
+			it('should call createCallback if file exists but json is not valid', async () => {
+				validateCallbackAsync.mockResolvedValueOnce({ isValid : false });
 
-					expect(writeJSONSpy).not.toHaveBeenCalled();
-				});
+				await fs.getJSONAsync(filePath, createCallbackAsync, validateCallbackAsync);
+
+				expect(readJSONSpy).toHaveBeenCalledWith(filePath);
+				expect(createCallbackAsync).toHaveBeenCalledWith();
+			});
+
+			it('should not call createCallback if file exists and validation function is not passed', async () => {
+				await fs.getJSONAsync(filePath, createCallbackAsync);
+
+				expect(readJSONSpy).toHaveBeenCalledWith(filePath);
+				expect(createCallbackAsync).not.toHaveBeenCalled();
+			});
+
+			it('should call createCallback if file does not exist', async () => {
+				mockFS({});
+
+				await fs.getJSONAsync(filePath, createCallbackAsync, validateCallbackAsync);
+
+				expect(readJSONSpy).not.toHaveBeenCalled();
+				expect(createCallbackAsync).toHaveBeenCalledWith();
+			});
+
+			it('should not write fallback JSON back if file exists and json is valid', async () => {
+				await fs.getJSONAsync(filePath, createCallbackAsync, validateCallbackAsync);
+
+				expect(writeJSONSpy).not.toHaveBeenCalled();
+			});
+
+			it('should write fallback JSON back if file exists but json is not valid', async () => {
+				validateCallbackAsync.mockResolvedValueOnce({ isValid : false });
+
+				await fs.getJSONAsync(filePath, createCallbackAsync, validateCallbackAsync);
+
+				expect(writeJSONSpy).toHaveBeenCalledWith(filePath, fallbackJSON);
+			});
+
+			it('should write fallback JSON back if file not exists', async () => {
+				mockFS({});
+
+				await fs.getJSONAsync(filePath, createCallbackAsync, validateCallbackAsync);
+
+				expect(writeJSONSpy).toHaveBeenCalledWith(filePath, fallbackJSON);
+			});
+
+			it('should return JSON if file exists and json is valid', async () => {
+				const result = await fs.getJSONAsync(filePath, createCallbackAsync, validateCallbackAsync);
+
+				expect(result).toEqual(json);
+			});
+
+			it('should return fallback JSON if file exists but json is not valid', async () => {
+				validateCallbackAsync.mockResolvedValueOnce({ isValid : false });
+
+				const result = await fs.getJSONAsync(filePath, createCallbackAsync, validateCallbackAsync);
+
+				expect(result).toEqual(fallbackJSON);
+			});
+
+			it('should return fallback JSON if file not exists', async () => {
+				mockFS({});
+
+				const result = await fs.getJSONAsync(filePath, createCallbackAsync, validateCallbackAsync);
+
+				expect(result).toEqual(fallbackJSON);
+			});
+
+			it('should throw if file exists but json is not valid and created json is not valid too', async () => {
+				mockFS({});
+				validateCallbackAsync.mockResolvedValue({ isValid : false });
+
+				await expect(async () => fs.getJSONAsync(filePath, createCallbackAsync, validateCallbackAsync))
+					.rejects.toEqual(new Error(`JSON created for ${filePath} is not valid`));
+
+				expect(writeJSONSpy).not.toHaveBeenCalled();
+			});
+
+			it('should throw with validation error if file exists but json is not valid and created json is not valid too', async () => {
+				mockFS({});
+				validateCallbackAsync.mockResolvedValue({ isValid : false, validationError : 'validation error' });
+
+				await expect(async () => fs.getJSONAsync(filePath, createCallbackAsync, validateCallbackAsync))
+					.rejects.toEqual(new Error(`JSON created for ${filePath} is not valid: validation error`));
+
+				expect(writeJSONSpy).not.toHaveBeenCalled();
 			});
 		});
 	});
 
 	describe('readTSV', () => {
+		const tsv               = iconv.encode('first name\tage\tdescription\r\nAlice\t25\tEntertainer\r\nJohn\t40\tSpecial guest\r\n', 'cp1251');
+		const tsvHeaders        = iconv.encode('first name\tage\tdescription\r\n', 'cp1251');
+		const tsvHeadersMissing = iconv.encode('first name\tage\r\nAlice\t25\tEntertainer\r\nJohn\t40\tSpecial guest\r\n', 'cp1251');
+		const tsvEmptyHeader    = iconv.encode('first name\t\tdescription\r\nAlice\t25\tEntertainer\r\nJohn\t40\tSpecial guest\r\n', 'cp1251');
+		const emptyFile         = iconv.encode('', 'cp1251');
+
 		it('should read tsv from file with cp1251 encoding', () => {
-			content = iconv.encode('first name\tage\tdescription\r\nAlice\t25\tEntertainer\r\nJohn\t40\tSpecial guest\r\n', 'cp1251');
+			mockFS({ [filePath] : tsv });
 
 			const result = fs.readTSV(filePath);
 
@@ -343,7 +404,7 @@ describe('src/lib/fs', () => {
 		});
 
 		it('should return empty array if file contains only headers', () => {
-			content = iconv.encode('first name\tage\tdescription\r\n', 'cp1251');
+			mockFS({ [filePath] : tsvHeaders });
 
 			const result = fs.readTSV(filePath);
 
@@ -352,7 +413,7 @@ describe('src/lib/fs', () => {
 		});
 
 		it('should return empty array if file is empty', () => {
-			content = iconv.encode('', 'cp1251');
+			mockFS({ [filePath] : emptyFile });
 
 			const result = fs.readTSV(filePath);
 
@@ -361,13 +422,13 @@ describe('src/lib/fs', () => {
 		});
 
 		it('should throw if amount of headers is less than amount of columns', () => {
-			content = iconv.encode('first name\tage\r\nAlice\t25\tEntertainer\r\nJohn\t40\tSpecial guest\r\n', 'cp1251');
+			mockFS({ [filePath] : tsvHeadersMissing });
 
 			expect(() => fs.readTSV(filePath)).toThrow('Cannot index header for row #3 because only 2 headers detected');
 		});
 
 		it('should throw if header is empty', () => {
-			content = iconv.encode('first name\t\tdescription\r\nAlice\t25\tEntertainer\r\nJohn\t40\tSpecial guest\r\n', 'cp1251');
+			mockFS({ [filePath] : tsvEmptyHeader });
 
 			expect(() => fs.readTSV(filePath)).toThrow('Header #2 is empty');
 		});
@@ -383,36 +444,36 @@ describe('src/lib/fs', () => {
 
 			fs.writeTSV(filePath, data);
 
-			expect(fs.writeFileSync).toHaveBeenCalledWith(filePath, iconv.encode('first name\tage\tdescription\r\nAlice\t25\tEntertainer\r\nJohn\t40\tSpecial guest', 'cp1251'));
+			expect(writeFileSyncSpy).toHaveBeenCalledWith(filePath, iconv.encode('first name\tage\tdescription\r\nAlice\t25\tEntertainer\r\nJohn\t40\tSpecial guest', 'cp1251'));
 		});
 
 		it('should write empty buffer into file if no data', () => {
-			const data: Record<string, any>[] = [];
+			const data: Record<string, unknown>[] = [];
 
 			fs.writeTSV(filePath, data);
 
-			expect(fs.writeFileSync).toHaveBeenCalledWith(filePath, iconv.encode('', 'cp1251'));
+			expect(writeFileSyncSpy).toHaveBeenCalledWith(filePath, iconv.encode('', 'cp1251'));
 		});
 	});
 
 	describe('joinPath', () => {
 		describe('default', () => {
 			it('should return two parts joined by default separator', () => {
-				expect(fs.joinPath('C:', 'path')).toEqual(`C:${path.sep}path`);
+				expect(fs.joinPath('TEST:', 'path')).toEqual(`TEST:${path.sep}path`);
 			});
 
 			separators.map(({ sep }) => {
 				it(`should return two parts joined by explicitly passed ${sep} separator`, () => {
-					expect(fs.joinPath('C:', 'path', { sep })).toEqual(`C:${sep}path`);
+					expect(fs.joinPath('TEST:', 'path', { sep })).toEqual(`TEST:${sep}path`);
 				});
 			});
 		});
 
 		separators.map(({ ns, sep }) => {
 			if (ns !== null) {
-				describe(`${ns}`, () => {
+				describe(ns, () => {
 					it(`should return two parts joined by ${sep} separator`, () => {
-						expect(fs[ns].joinPath('C:', 'path')).toEqual(`C:${sep}path`);
+						expect(fs[ns].joinPath('TEST:', 'path')).toEqual(`TEST:${sep}path`);
 					});
 				});
 			}
@@ -430,188 +491,99 @@ describe('src/lib/fs', () => {
 			const recurse      = ns ? fs[ns].recurse : fs.recurse;
 			const describeSpec = [ 'fs', ns ].filter((s) => s).join('.');
 
-			const fsTree: FSDir = {
-				name  : 'C:',
-				type  : 'dir',
-				items : [
-					{ name  : 'ProgramData',
-						type  : 'dir',
-						items : [
-							{ name  : 'MySoftware',
-								type  : 'dir',
-								items : [
-									{ name : 'errors.log', size : 10, type : 'file' },
-									{ name : 'profile.dat', size : 20, type : 'file' },
-								] },
-							{ name : 'Desktop', target : `C:${sep}Users${sep}Public${sep}Desktop`, type : 'link' },
-						] },
-					{ name : 'System Volume Information', type : 'dir' },
-					{ name  : 'Users',
-						type  : 'dir',
-						items : [
-							{ name  : 'Public',
-								type  : 'dir',
-								items : [
-									{ name : 'Desktop', type : 'dir' },
-									{ name  : 'Downloads',
-										type  : 'dir',
-										items : [
-											{ name : 'install.zip', size : 30, type : 'file' },
-											{ name : 'image.jpg', size : 40, type : 'file' },
-										] },
-									{ name : 'desktop.ini', size : 50, type : 'file' },
-									{ name : 'ntuser.dat', size : 60, type : 'file' },
-								] },
-							{ name : 'AllUsers', target : `C:${sep}ProgramData`, type : 'link' },
-						] },
-					{ name : 'pagefile.sys', size : 70, type : 'file' },
-					{ name : 'Documents and Settings', target : `C:${sep}Users`, type : 'link' },
-				],
-			};
-
-			describe(`${describeSpec}`, () => {
-				let allFiles: Files;
-				let readdirSyncSpy: jest.SpyInstance;
-				let existsSyncSpy: jest.SpyInstance;
-
-				beforeAll(() => {
-					readdirSyncSpy = jest.spyOn(fs, 'readdirSync');
-					existsSyncSpy  = jest.spyOn(fs, 'existsSync');
+			beforeEach(() => {
+				mockFS({
+					'TEST:' : {
+						'ProgramData' : {
+							'MySoftware' : {
+								'errors.log'  : '0'.repeat(10),
+								'profile.dat' : '0'.repeat(20),
+							},
+							'Desktop' : mockFS.symlink({ path : `TEST:${sep}Users${sep}Public${sep}Desktop` }),
+						},
+						'System Volume Information' : {},
+						'Users'                     : {
+							'Public' : {
+								'Desktop'   : {},
+								'Downloads' : {
+									'install.zip' : '0'.repeat(30),
+									'image.jpg'   : '0'.repeat(40),
+								},
+								'desktop.ini' : '0'.repeat(50),
+								'ntuser.dat'  : '0'.repeat(60),
+							},
+							'AllUsers' : mockFS.symlink({ path : `TEST:${sep}ProgramData` }),
+						},
+						'pagefile.sys'           : '0'.repeat(70),
+						'Documents and Settings' : mockFS.symlink({ path : `TEST:${sep}Users` }),
+					},
 				});
+			});
 
-				beforeEach(() => {
-					const { files, mock } = mockFS([ fsTree ], sep);
+			afterEach(() => {
+				mockFS.restore();
+			});
 
-					allFiles = files;
-					existsSyncSpy.mockImplementation(mock.existsSync);
-					readdirSyncSpy.mockImplementation(mock.readdirSync);
-				});
-
-				afterAll(() => {
-					readdirSyncSpy.mockRestore();
-					existsSyncSpy.mockRestore();
-				});
-
+			describe(describeSpec, () => {
 				describe('recurse', () => {
-					describe('processAllFiles', () => {
-						it('should correctly build list of all files', () => {
-							expect(allFiles).toEqual({
-								'C:' : expect.objectContaining({
-									type : 'dir', fullName : 'C:', name : 'C:',
-								}),
-								[`C:${sep}Documents and Settings`] : expect.objectContaining({
-									type : 'link', fullName : `C:${sep}Documents and Settings`, name : 'Documents and Settings', target : `C:${sep}Users`,
-								}),
-								[`C:${sep}ProgramData`] : expect.objectContaining({
-									type : 'dir', fullName : `C:${sep}ProgramData`, name : 'ProgramData',
-								}),
-								[`C:${sep}ProgramData${sep}Desktop`] : expect.objectContaining({
-									type : 'link', fullName : `C:${sep}ProgramData${sep}Desktop`, name : 'Desktop', target : `C:${sep}Users${sep}Public${sep}Desktop`,
-								}),
-								[`C:${sep}ProgramData${sep}MySoftware`] : expect.objectContaining({
-									type : 'dir', fullName : `C:${sep}ProgramData${sep}MySoftware`, name : 'MySoftware',
-								}),
-								[`C:${sep}ProgramData${sep}MySoftware${sep}errors.log`] : expect.objectContaining({
-									type : 'file', fullName : `C:${sep}ProgramData${sep}MySoftware${sep}errors.log`, name : 'errors.log', size : 10,
-								}),
-								[`C:${sep}ProgramData${sep}MySoftware${sep}profile.dat`] : expect.objectContaining({
-									type : 'file', fullName : `C:${sep}ProgramData${sep}MySoftware${sep}profile.dat`, name : 'profile.dat', size : 20,
-								}),
-								[`C:${sep}System Volume Information`] : expect.objectContaining({
-									type : 'dir', fullName : `C:${sep}System Volume Information`, name : 'System Volume Information',
-								}),
-								[`C:${sep}Users`] : expect.objectContaining({
-									type : 'dir', fullName : `C:${sep}Users`, name : 'Users',
-								}),
-								[`C:${sep}Users${sep}AllUsers`] : expect.objectContaining({
-									type : 'link', fullName : `C:${sep}Users${sep}AllUsers`, name : 'AllUsers', target : `C:${sep}ProgramData`,
-								}),
-								[`C:${sep}Users${sep}Public`] : expect.objectContaining({
-									type : 'dir', fullName : `C:${sep}Users${sep}Public`, name : 'Public',
-								}),
-								[`C:${sep}Users${sep}Public${sep}Desktop`] : expect.objectContaining({
-									type : 'dir', fullName : `C:${sep}Users${sep}Public${sep}Desktop`, name : 'Desktop',
-								}),
-								[`C:${sep}Users${sep}Public${sep}Downloads`] : expect.objectContaining({
-									type : 'dir', fullName : `C:${sep}Users${sep}Public${sep}Downloads`, name : 'Downloads',
-								}),
-								[`C:${sep}Users${sep}Public${sep}Downloads${sep}install.zip`] : expect.objectContaining({
-									type : 'file', fullName : `C:${sep}Users${sep}Public${sep}Downloads${sep}install.zip`, name : 'install.zip', size : 30,
-								}),
-								[`C:${sep}Users${sep}Public${sep}Downloads${sep}image.jpg`] : expect.objectContaining({
-									type : 'file', fullName : `C:${sep}Users${sep}Public${sep}Downloads${sep}image.jpg`, name : 'image.jpg', size : 40,
-								}),
-								[`C:${sep}Users${sep}Public${sep}desktop.ini`] : expect.objectContaining({
-									type : 'file', fullName : `C:${sep}Users${sep}Public${sep}desktop.ini`, name : 'desktop.ini', size : 50,
-								}),
-								[`C:${sep}Users${sep}Public${sep}ntuser.dat`] : expect.objectContaining({
-									type : 'file', fullName : `C:${sep}Users${sep}Public${sep}ntuser.dat`, name : 'ntuser.dat', size : 60,
-								}),
-								[`C:${sep}pagefile.sys`] : expect.objectContaining({
-									type : 'file', fullName : `C:${sep}pagefile.sys`, name : 'pagefile.sys', size : 70,
-								}),
-							});
-						});
-					});
-
 					it('should do nothing if root does not exist', () => {
-						recurse(`C:${sep}wrong${sep}path`, callbacks.file);
+						recurse(`TEST:${sep}wrong${sep}path`, callbacks.file);
 
 						expect(callbacks.file).not.toHaveBeenCalled();
 						expect(readdirSyncSpy).not.toHaveBeenCalled();
 					});
 
 					it('should recursively apply the only callback to all nested entities except itself', () => {
-						recurse(`C:${sep}ProgramData`, callbacks.file);
+						recurse(`TEST:${sep}ProgramData`, callbacks.file);
 
 						expect(callbacks.file).toHaveBeenCalledTimes(4);
-						expect(callbacks.file).toHaveBeenCalledWith(`C:${sep}ProgramData${sep}Desktop`, 'Desktop', expect.anything());
-						expect(callbacks.file).toHaveBeenCalledWith(`C:${sep}ProgramData${sep}MySoftware`, 'MySoftware', expect.anything());
-						expect(callbacks.file).toHaveBeenCalledWith(`C:${sep}ProgramData${sep}MySoftware${sep}errors.log`, 'errors.log', expect.anything());
-						expect(callbacks.file).toHaveBeenCalledWith(`C:${sep}ProgramData${sep}MySoftware${sep}profile.dat`, 'profile.dat', expect.anything());
+						expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}Desktop`, 'Desktop', expect.anything());
+						expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware`, 'MySoftware', expect.anything());
+						expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware${sep}errors.log`, 'errors.log', expect.anything());
+						expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware${sep}profile.dat`, 'profile.dat', expect.anything());
 					});
 
 					it('should not apply callback to itself', () => {
-						recurse(`C:${sep}ProgramData`, callbacks.file);
+						recurse(`TEST:${sep}ProgramData`, callbacks.file);
 
-						expect(callbacks.file).not.toHaveBeenCalledWith(`C:${sep}ProgramData`, 'ProgramData', expect.anything());
+						expect(callbacks.file).not.toHaveBeenCalledWith(`TEST:${sep}ProgramData`, 'ProgramData', expect.anything());
 					});
 
 					it('should recursively read all nested directories', () => {
-						recurse('C:', callbacks.file);
+						recurse('TEST:', callbacks.file);
 
 						expect(readdirSyncSpy).toHaveBeenCalledTimes(7);
-						expect(readdirSyncSpy).toHaveBeenCalledWith('C:', { withFileTypes : true });
-						expect(readdirSyncSpy).toHaveBeenCalledWith(`C:${sep}ProgramData`, { withFileTypes : true });
-						expect(readdirSyncSpy).toHaveBeenCalledWith(`C:${sep}ProgramData${sep}MySoftware`, { withFileTypes : true });
-						expect(readdirSyncSpy).toHaveBeenCalledWith(`C:${sep}Users`, { withFileTypes : true });
-						expect(readdirSyncSpy).toHaveBeenCalledWith(`C:${sep}Users${sep}Public`, { withFileTypes : true });
-						expect(readdirSyncSpy).toHaveBeenCalledWith(`C:${sep}Users${sep}Public${sep}Desktop`, { withFileTypes : true });
-						expect(readdirSyncSpy).toHaveBeenCalledWith(`C:${sep}Users${sep}Public${sep}Downloads`, { withFileTypes : true });
+						expect(readdirSyncSpy).toHaveBeenCalledWith('TEST:', { withFileTypes : true });
+						expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}ProgramData`, { withFileTypes : true });
+						expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware`, { withFileTypes : true });
+						expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}Users`, { withFileTypes : true });
+						expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}Users${sep}Public`, { withFileTypes : true });
+						expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}Users${sep}Public${sep}Desktop`, { withFileTypes : true });
+						expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}Users${sep}Public${sep}Downloads`, { withFileTypes : true });
 					});
 
 					it('should not process System Volume Information', () => {
-						recurse('C:', callbacks.file);
+						recurse('TEST:', callbacks.file);
 
-						expect(readdirSyncSpy).not.toHaveBeenCalledWith(`C:${sep}System Volume Information`);
+						expect(readdirSyncSpy).not.toHaveBeenCalledWith(`TEST:${sep}System Volume Information`);
 					});
 
 					it('should recursively apply callbacks of each type', () => {
-						recurse(`C:${sep}ProgramData`, callbacks);
+						recurse(`TEST:${sep}ProgramData`, callbacks);
 
 						expect(callbacks.dir).toHaveBeenCalledTimes(1);
-						expect(callbacks.dir).toHaveBeenCalledWith(`C:${sep}ProgramData${sep}MySoftware`, 'MySoftware', expect.anything());
+						expect(callbacks.dir).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware`, 'MySoftware', expect.anything());
 
 						expect(callbacks.link).toHaveBeenCalledTimes(1);
-						expect(callbacks.link).toHaveBeenCalledWith(`C:${sep}ProgramData${sep}Desktop`, 'Desktop', expect.anything());
+						expect(callbacks.link).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}Desktop`, 'Desktop', expect.anything());
 
 						expect(callbacks.file).toHaveBeenCalledTimes(2);
-						expect(callbacks.file).toHaveBeenCalledWith(`C:${sep}ProgramData${sep}MySoftware${sep}errors.log`, 'errors.log', expect.anything());
-						expect(callbacks.file).toHaveBeenCalledWith(`C:${sep}ProgramData${sep}MySoftware${sep}profile.dat`, 'profile.dat', expect.anything());
+						expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware${sep}errors.log`, 'errors.log', expect.anything());
+						expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware${sep}profile.dat`, 'profile.dat', expect.anything());
 					});
 
 					it('should not apply callbacks of non-existing types', () => {
-						recurse(`C:${sep}Users${sep}Public`, callbacks);
+						recurse(`TEST:${sep}Users${sep}Public`, callbacks);
 
 						expect(callbacks.dir).toHaveBeenCalled();
 						expect(callbacks.file).toHaveBeenCalled();
@@ -619,7 +591,7 @@ describe('src/lib/fs', () => {
 					});
 
 					it('should not apply any callbacks if no any nested entities', () => {
-						recurse(`C:${sep}Users${sep}Public${sep}Desktop`, callbacks);
+						recurse(`TEST:${sep}Users${sep}Public${sep}Desktop`, callbacks);
 
 						expect(callbacks.dir).not.toHaveBeenCalled();
 						expect(callbacks.file).not.toHaveBeenCalled();
@@ -627,85 +599,63 @@ describe('src/lib/fs', () => {
 					});
 
 					it('should limit entities to current level if depth is 1', () => {
-						recurse(`C:${sep}Users`, callbacks, { depth : 1 });
+						recurse(`TEST:${sep}Users`, callbacks, { depth : 1 });
 
 						expect(readdirSyncSpy).toHaveBeenCalledTimes(1);
-						expect(readdirSyncSpy).toHaveBeenCalledWith(`C:${sep}Users`, { withFileTypes : true });
+						expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}Users`, { withFileTypes : true });
 
 						expect(callbacks.dir).toHaveBeenCalledTimes(1);
-						expect(callbacks.dir).toHaveBeenCalledWith(`C:${sep}Users${sep}Public`, 'Public', expect.anything());
+						expect(callbacks.dir).toHaveBeenCalledWith(`TEST:${sep}Users${sep}Public`, 'Public', expect.anything());
 
 						expect(callbacks.file).not.toHaveBeenCalled();
 
 						expect(callbacks.link).toHaveBeenCalledTimes(1);
-						expect(callbacks.link).toHaveBeenCalledWith(`C:${sep}Users${sep}AllUsers`, 'AllUsers', expect.anything());
+						expect(callbacks.link).toHaveBeenCalledWith(`TEST:${sep}Users${sep}AllUsers`, 'AllUsers', expect.anything());
 					});
 
 					it('should limit entities to specified level if depth is positive number', () => {
-						recurse('C:', callbacks, { depth : 2 });
+						recurse('TEST:', callbacks, { depth : 2 });
 
 						expect(readdirSyncSpy).toHaveBeenCalledTimes(3);
-						expect(readdirSyncSpy).toHaveBeenCalledWith('C:', { withFileTypes : true });
-						expect(readdirSyncSpy).toHaveBeenCalledWith(`C:${sep}ProgramData`, { withFileTypes : true });
-						expect(readdirSyncSpy).toHaveBeenCalledWith(`C:${sep}Users`, { withFileTypes : true });
+						expect(readdirSyncSpy).toHaveBeenCalledWith('TEST:', { withFileTypes : true });
+						expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}ProgramData`, { withFileTypes : true });
+						expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}Users`, { withFileTypes : true });
 
 						expect(callbacks.dir).toHaveBeenCalledTimes(4);
-						expect(callbacks.dir).toHaveBeenCalledWith(`C:${sep}ProgramData`, 'ProgramData', expect.anything());
-						expect(callbacks.dir).toHaveBeenCalledWith(`C:${sep}ProgramData${sep}MySoftware`, 'MySoftware', expect.anything());
-						expect(callbacks.dir).toHaveBeenCalledWith(`C:${sep}Users`, 'Users', expect.anything());
-						expect(callbacks.dir).toHaveBeenCalledWith(`C:${sep}Users${sep}Public`, 'Public', expect.anything());
+						expect(callbacks.dir).toHaveBeenCalledWith(`TEST:${sep}ProgramData`, 'ProgramData', expect.anything());
+						expect(callbacks.dir).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware`, 'MySoftware', expect.anything());
+						expect(callbacks.dir).toHaveBeenCalledWith(`TEST:${sep}Users`, 'Users', expect.anything());
+						expect(callbacks.dir).toHaveBeenCalledWith(`TEST:${sep}Users${sep}Public`, 'Public', expect.anything());
 
 						expect(callbacks.file).toHaveBeenCalledTimes(1);
-						expect(callbacks.file).toHaveBeenCalledWith(`C:${sep}pagefile.sys`, 'pagefile.sys', expect.anything());
+						expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}pagefile.sys`, 'pagefile.sys', expect.anything());
 
 						expect(callbacks.link).toHaveBeenCalledTimes(3);
-						expect(callbacks.link).toHaveBeenCalledWith(`C:${sep}Documents and Settings`, 'Documents and Settings', expect.anything());
-						expect(callbacks.link).toHaveBeenCalledWith(`C:${sep}ProgramData${sep}Desktop`, 'Desktop', expect.anything());
+						expect(callbacks.link).toHaveBeenCalledWith(`TEST:${sep}Documents and Settings`, 'Documents and Settings', expect.anything());
+						expect(callbacks.link).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}Desktop`, 'Desktop', expect.anything());
 					});
 
 					it('should limit entities to specified extension', () => {
-						recurse('C:', callbacks, { ext : '.dat' });
+						recurse('TEST:', callbacks, { ext : '.dat' });
 
 						expect(callbacks.file).toHaveBeenCalledTimes(2);
-						expect(callbacks.file).toHaveBeenCalledWith(`C:${sep}ProgramData${sep}MySoftware${sep}profile.dat`, 'profile.dat', expect.anything());
-						expect(callbacks.file).toHaveBeenCalledWith(`C:${sep}Users${sep}Public${sep}ntuser.dat`, 'ntuser.dat', expect.anything());
+						expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware${sep}profile.dat`, 'profile.dat', expect.anything());
+						expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}Users${sep}Public${sep}ntuser.dat`, 'ntuser.dat', expect.anything());
 					});
 				});
 
 				if (!ns) {
 					describe('size', () => {
-						let lstatSyncSpy: jest.SpyInstance;
-
-						beforeAll(() => {
-							lstatSyncSpy = jest.spyOn(fs, 'lstatSync');
-						});
-
-						beforeEach(() => {
-							lstatSyncSpy.mockImplementation((filepath) => {
-								const item = allFiles[filepath];
-
-								if (!item) {
-									throw `There is no ${filepath} in allFiles`;
-								}
-
-								return { size : item.type === 'file' ? item.size : 0 };
-							});
-						});
-
-						afterAll(() => {
-							lstatSyncSpy.mockRestore();
-						});
-
 						it('should calculate size', () => {
-							expect(fs.size('C:')).toEqual(280);
+							expect(fs.size('TEST:')).toEqual(280);
 						});
 
 						it('should calculate size without ignored files', () => {
-							expect(fs.size('C:', [ 'install.zip', 'profile.dat' ])).toEqual(230);
+							expect(fs.size('TEST:', [ 'install.zip', 'profile.dat' ])).toEqual(230);
 						});
 
 						it('should calculate size without ignored directories', () => {
-							expect(fs.size('C:', [ 'Downloads', 'MySoftware' ])).toEqual(180);
+							expect(fs.size('TEST:', [ 'Downloads', 'MySoftware' ])).toEqual(180);
 						});
 					});
 				}

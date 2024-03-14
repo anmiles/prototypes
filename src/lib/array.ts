@@ -2,13 +2,12 @@ declare global {
 	interface Array<T> {
 		unique(this: Array<T>): Array<T>;
 		equals(this: Array<T>, array: Array<T>): boolean;
-		indexFieldOf<T extends Record<string, any>>(this: Array<T>, fields: string | string[], searchTerm: any, skip?: number): number;
+		indexFieldOf<T extends Record<string, unknown>>(this: Array<T>, fields: string[] | string, searchTerm: unknown, skip?: number): number;
 		sum<T extends number>(this: Array<T>): number;
 		sort(this: Array<T>, compareFn?: ((a: T, b: T) => number) | undefined): Array<T>;
-		sort(this: Array<T>, direction: boolean, options?: { ignoreCase?: boolean, find?: string, replace?: string }): Array<T>;
-		sort(this: Array<T>, field: string, options?: { ignoreCase?: boolean, find?: string, replace?: string }): Array<T>;
-		sort(this: Array<T>, fields: string[], options?: { ignoreCase?: boolean, find?: string, replace?: string }): Array<T>;
-		sort(this: Array<T>, fields: Record<string, boolean>, options?: { ignoreCase?: boolean, find?: string, replace?: string }): Array<T>;
+		sort(this: Array<T>, direction: boolean, options?: { ignoreCase? : boolean; find? : string; replace? : string }): Array<T>;
+		sort(this: Array<T>, field: string, options?: { ignoreCase? : boolean; find? : string; replace? : string }): Array<T>;
+		sort(this: Array<T>, fields: Record<string, boolean> | string[], options?: { ignoreCase? : boolean; find? : string; replace? : string }): Array<T>;
 	}
 }
 
@@ -34,7 +33,12 @@ Array.prototype.equals = function equals<T>(this: Array<T>, array: Array<T>): bo
 	return true;
 };
 
-Array.prototype.indexFieldOf = function indexFieldOf<T extends Record<string, any>>(this: Array<T>, fields: string | string[], searchTerm: any, skip: number = 0): number {
+Array.prototype.indexFieldOf = function indexFieldOf<T extends Record<string, unknown>>(
+	this: Array<T>,
+	fields: string[] | string,
+	searchTerm: unknown,
+	skip = 0,
+): number {
 	if (typeof fields === 'string') {
 		fields = [ fields ];
 	}
@@ -43,7 +47,7 @@ Array.prototype.indexFieldOf = function indexFieldOf<T extends Record<string, an
 		let val = this[i];
 
 		for (const field of fields) {
-			val = val?.[field];
+			val = val?.[field] as T | undefined;
 
 			if (typeof val === 'undefined') {
 				break;
@@ -67,18 +71,78 @@ Array.prototype.sum = function sum<T extends number>(this: Array<T>): number {
 type OriginalSort<T> = (this: Array<T>, compareFn?: (a: T, b: T) => number) => T[];
 
 (<T>(originalSort: OriginalSort<T>) => {
-	function bothAreStringLike(val1: any, val2: any) {
-		return (typeof val1 === 'string' || val1 === null || val1 === undefined) && (typeof val2 === 'string' || val2 === null || val2 === undefined);
+	function isRecord(obj: unknown): obj is Record<string, unknown> {
+		return typeof obj === 'object' && obj !== null;
+	}
+
+	function getObjectField(obj: unknown, field: string): unknown {
+		if (field === '') {
+			return obj;
+		}
+
+		if (!isRecord(obj)) {
+			throw new TypeError(`Failed to access a key or key sequence '${field}' in a non-object value: ${JSON.stringify(obj)}`);
+		}
+
+		if (field in obj) {
+			return obj[field];
+		}
+
+		let value: unknown = obj;
+
+		if (field.includes('.')) {
+			for (const fieldPath of field.split('.')) {
+				if (!isRecord(value)) {
+					throw new TypeError(`Failed to access a key or key sequence '${fieldPath}' in a nested non-object value: ${JSON.stringify(value)}`);
+				}
+				if (fieldPath in value) {
+					value = value[fieldPath];
+				} else {
+					throw new TypeError(`Failed to access an unknown key '${fieldPath}' as a part of sequence '${field}' in an object: ${JSON.stringify(value)}`);
+				}
+			}
+		} else {
+			throw new TypeError(`Failed to access an unknown key '${field}' in an object: ${JSON.stringify(value)}`);
+		}
+
+		return value;
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- return `any` values to let them being compared
+	function applyOptions(val: unknown, options?: { ignoreCase? : boolean; find? : string; replace? : string }): any {
+		val = val ?? '';
+
+		if (options?.ignoreCase ?? options?.find) {
+			if (typeof val !== 'string') {
+				throw new TypeError(`Cannot use 'ignoreCase' or 'find' options on non-string value: ${JSON.stringify(val)}`);
+			}
+
+			let str = val;
+
+			if (options.ignoreCase) {
+				str = str.toLowerCase();
+			}
+
+			if (options.find) {
+				str = str.replace(options.find, options.replace ?? '');
+			}
+
+			return str;
+		} else {
+			return val;
+		}
 	}
 
 	function sort(this: Array<T>, compareFn?: ((a: T, b: T) => number) | undefined): Array<T>;
-	function sort(this: Array<T>, direction: boolean, options?: { ignoreCase?: boolean, find?: string, replace?: string }): Array<T>;
-	function sort(this: Array<T>, field: string, options?: { ignoreCase?: boolean, find?: string, replace?: string }): Array<T>;
-	function sort(this: Array<T>, fields: string[], options?: { ignoreCase?: boolean, find?: string, replace?: string }): Array<T>;
-	function sort(this: Array<T>, fields: Record<string, boolean>, options?: { ignoreCase?: boolean, find?: string, replace?: string }): Array<T>;
-	function sort(this: Array<T>, arg: ((a: T, b: T) => number) | boolean | string | string[] | Record<string, boolean> | undefined, options: { ignoreCase?: boolean, find?: string, replace?: string } = {}): Array<T> {
-		const array = this as Array<T>;
-
+	function sort(this: Array<T>, direction: boolean, options?: { ignoreCase? : boolean; find? : string; replace? : string }): Array<T>;
+	function sort(this: Array<T>, field: string, options?: { ignoreCase? : boolean; find? : string; replace? : string }): Array<T>;
+	function sort(this: Array<T>, fields: string[], options?: { ignoreCase? : boolean; find? : string; replace? : string }): Array<T>;
+	function sort(this: Array<T>, fields: Record<string, boolean>, options?: { ignoreCase? : boolean; find? : string; replace? : string }): Array<T>;
+	function sort(
+		this: Array<T>,
+		arg: Record<string, boolean> | string[] | boolean | string | ((a: T, b: T) => number) | undefined,
+		options: { ignoreCase? : boolean; find? : string; replace? : string } = {},
+	): Array<T> {
 		if (typeof arg === 'undefined') {
 			return originalSort.call(this);
 		}
@@ -88,49 +152,26 @@ type OriginalSort<T> = (this: Array<T>, compareFn?: (a: T, b: T) => number) => T
 		}
 
 		if (typeof arg === 'boolean') {
-			return array.sort({ '' : arg }, options);
+			return this.sort({ '' : arg }, options);
 		}
 
 		if (typeof arg === 'string') {
-			return array.sort({ [arg] : true }, options);
+			return this.sort({ [arg] : true }, options);
 		}
 
 		if (Array.isArray(arg)) {
 			const fields: Record<string, boolean> = {};
 			arg.forEach((field) => fields[field] = true);
-			return array.sort(fields, options);
+			return this.sort(fields, options);
 		}
 
-		return originalSort.call(array, function(item1: T, item2: T) {
+		return originalSort.call(this, function(item1: T, item2: T) {
 			for (const field in arg) {
 				const direction = arg[field];
-				let val1: any   = item1;
-				let val2: any   = item2;
 
-				if (field.includes('.') && !(field in val1)) {
-					for (const fieldPath of field.split('.')) {
-						val1 = val1[fieldPath];
-						val2 = val2[fieldPath];
-					}
-				} else if (field) {
-					val1 = val1[field];
-					val2 = val2[field];
-				}
-
-				if (bothAreStringLike(val1, val2) || options.ignoreCase || options.find) {
-					val1 = (val1 || '').toString();
-					val2 = (val2 || '').toString();
-				}
-
-				if (options.ignoreCase) {
-					val1 = val1.toLowerCase();
-					val2 = val2.toLowerCase();
-				}
-
-				if (options.find) {
-					val1 = val1.replace(options.find, options.replace);
-					val2 = val2.replace(options.find, options.replace);
-				}
+				/* eslint-disable @typescript-eslint/no-unsafe-assignment -- return `any` values to let them being compared */
+				const val1 = applyOptions(getObjectField(item1, field), options);
+				const val2 = applyOptions(getObjectField(item2, field), options);
 
 				if (val2 < val1) {
 					return direction ? 1 : -1;
@@ -146,4 +187,5 @@ type OriginalSort<T> = (this: Array<T>, compareFn?: (a: T, b: T) => number) => T
 	}
 
 	Array.prototype.sort = sort;
+// eslint-disable-next-line @typescript-eslint/unbound-method -- change the prototype
 })(Array.prototype.sort);

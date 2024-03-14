@@ -39,8 +39,7 @@ String.prototype.htmlEscape = function htmlEscape(this: string) {
 		.replace(/>/gm, '&gt;')
 		.replace(/[\u00a0-\u9999]/gim, function(i: string) {
 			return `&#${i.charCodeAt(0)};`;
-		})
-	;
+		});
 };
 
 String.prototype.urlEscape = function urlEscape(this: string) {

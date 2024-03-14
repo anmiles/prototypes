@@ -250,6 +250,20 @@ describe('src/lib/array', () => {
 			]);
 		});
 
+		it('should replace with an empty string if `replace` option is not specified', () => {
+			expect([
+				{ a : 'a2', b : 'b2' },
+				{ a : 'a2', b : 'b1' },
+				{ a : 'a1', b : 'b2' },
+				{ a : 'a1', b : 'b1' },
+			].sort({ b : false, a : true }, { find : '2' })).toEqual([
+				{ a : 'a2', b : 'b1' },
+				{ a : 'a1', b : 'b1' },
+				{ a : 'a2', b : 'b2' },
+				{ a : 'a1', b : 'b2' },
+			]);
+		});
+
 		it('should treat null or undefined as empty string when find and replace', () => {
 			expect([
 				{ a : 'a2', b : 'b2' },
@@ -262,6 +276,60 @@ describe('src/lib/array', () => {
 				{ a : 'a2', b : 'b2' },
 				{ a : 'a1', b : null },
 			]);
+		});
+
+		it('should throw error when trying to access a key in a non-object value', () => {
+			expect(() => [
+				{ a : 4 },
+				{ a : 2 },
+				{ a : 3 },
+				{ a : 2 },
+				'not an object',
+			].sort('a')).toThrow(new Error('Failed to access a key or key sequence \'a\' in a non-object value: "not an object"'));
+		});
+
+		it('should throw error when trying to a key sequence in a non-object value', () => {
+			expect(() => [
+				{ b : { c : 2 } },
+				{ b : { c : 4 } },
+				'not an object',
+			].sort([ 'b.c' ])).toThrow(new Error('Failed to access a key or key sequence \'b.c\' in a non-object value: "not an object"'));
+		});
+
+		it('should throw error when trying to access a nested key in a nested non-object value', () => {
+			expect(() => [
+				{ b : { c : 2 } },
+				{ b : { c : 4 } },
+				{ b : 'not an object' },
+			].sort([ 'b.c' ])).toThrow(new Error('Failed to access a key or key sequence \'c\' in a nested non-object value: "not an object"'));
+		});
+
+		it('should throw error when trying to access an unknown key', () => {
+			expect(() => [
+				{ b : { c : 2 } },
+				{ b : { c : 4 } },
+			].sort([ 'a' ])).toThrow(new Error('Failed to access an unknown key \'a\' in an object: {"b":{"c":4}}'));
+		});
+
+		it('should throw error when trying to access an unknown key as a part of sequence', () => {
+			expect(() => [
+				{ b : { c : 2 } },
+				{ b : { c : 4 } },
+			].sort([ 'b.d' ])).toThrow(new Error('Failed to access an unknown key \'d\' as a part of sequence \'b.d\' in an object: {"c":4}'));
+		});
+
+		it('should throw when applying `ignoreCase` option to a non-string value', () => {
+			expect(() => [
+				{ a : 'a2', b : 'b2' },
+				{ a : 'a2', b : 1 },
+			].sort({ b : false }, { ignoreCase : true })).toThrow(new Error('Cannot use \'ignoreCase\' or \'find\' options on non-string value: 1'));
+		});
+
+		it('should throw when applying `find` option to a non-string value', () => {
+			expect(() => [
+				{ a : 'a2', b : 'b2' },
+				{ a : 'a2', b : 2 },
+			].sort({ b : false, a : true }, { find : 'a', replace : 'c' })).toThrow(new Error('Cannot use \'ignoreCase\' or \'find\' options on non-string value: 2'));
 		});
 	});
 });

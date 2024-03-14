@@ -17,7 +17,7 @@ describe('src/lib/object', () => {
 
 		it('should calculate default values from keys', () => {
 			const keys     = [ 'key1', 'key2', 'key3' ] as const;
-			const getValue = (key: typeof keys[number]) => ({ name : 'value', key });
+			const getValue = (key: typeof keys[number]) => ({ name : 'value', key } as const);
 
 			const obj = Object.fill(keys, getValue);
 
