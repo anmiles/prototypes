@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import './lib/array';
 import './lib/error';
 import './lib/fs';

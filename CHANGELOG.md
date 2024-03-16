@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [10.0.0](../../tags/v10.0.0) - 2024-03-16
+### Added
+- `String.prototype.urlEscape` to support russian letters
+- `Error.parse` to build Error instance from an object of unknown type
+### Changed
+- Update eslint config and raise minimum supported NodeJS version to match one in typescript-eslint plugin
+- Update .npmignore
+- Unify jest.config.js by removing redundant patterns and providing support for both ts and tsx
+
 ## [9.0.2](../../tags/v9.0.2) - 2024-01-30
 ### Changed
 - Migrate to GitHub
