@@ -5,8 +5,6 @@ declare global {
 	}
 }
 
-export {};
-
 Number.prototype.case = function _case(this: number, zero: string, one: string, two: string): string {
 	let num = Math.abs(this);
 	num    %= 100;
@@ -49,3 +47,5 @@ Number.prototype.pad = function pad(this: number, before: number, after?: number
 
 	return leftPart + rightPart;
 };
+
+export {};

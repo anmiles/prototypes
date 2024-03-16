@@ -4,8 +4,6 @@ declare global {
 	}
 }
 
-export {};
-
 Error.parse = function parse(arg: unknown): Error {
 	if (arg === null || arg === undefined) {
 		return new Error('');
@@ -31,3 +29,5 @@ Error.parse = function parse(arg: unknown): Error {
 
 	return new Error(JSON.stringify(arg));
 };
+
+export {};

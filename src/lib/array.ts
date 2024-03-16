@@ -11,8 +11,6 @@ declare global {
 	}
 }
 
-export {};
-
 Array.prototype.unique = function unique<T>(this: Array<T>): Array<T> {
 	return this.filter(function(value: T, index: number, array: T[]) {
 		return array.indexOf(value) === index;
@@ -189,3 +187,5 @@ type OriginalSort<T> = (this: Array<T>, compareFn?: (a: T, b: T) => number) => T
 	Array.prototype.sort = sort;
 // eslint-disable-next-line @typescript-eslint/unbound-method -- change the prototype
 })(Array.prototype.sort);
+
+export {};

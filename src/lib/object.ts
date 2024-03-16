@@ -13,8 +13,6 @@ declare global {
 	}
 }
 
-export {};
-
 Object.fill = <K extends string, V>(keys: readonly K[], getValue: (key: K) => V): Record<K, V> => {
 	const obj = {} as Record<K, V>;
 
@@ -39,4 +37,6 @@ Object.typedEntries = <K extends string, V>(
 ): [K, V][] => Object
 	.typedKeys(obj, allKeys)
 	.map((key) => [ key, obj[key] ]);
+
+export {};
 

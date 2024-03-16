@@ -10,8 +10,6 @@ declare global {
 	}
 }
 
-export {};
-
 String.prototype.toUpperFirstLetter = function toUpperFirstLetter(this: string) {
 	const firstLetter = this[0];
 
@@ -108,3 +106,5 @@ String.prototype.toFilename = function toFilename(this: string) {
 		.replace(/^\.+/g, '').replace(/\.+$/g, '') // remove leading and trailing dots
 	;
 };
+
+export {};
