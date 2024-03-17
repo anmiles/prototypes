@@ -10,9 +10,9 @@ const readFileSyncSpy  = jest.spyOn(fs, 'readFileSync');
 const writeFileSyncSpy = jest.spyOn(fs, 'writeFileSync');
 
 const separators = [
-	{ ns : 'posix', sep : '/', recurseEnabled : true },
-	{ ns : 'win32', sep : '\\', recurseEnabled : process.platform === 'win32' },
-	{ ns : null, sep : path.sep, recurseEnabled : true },
+	{ ns : null, sep : path.sep },
+	{ ns : 'posix', sep : '/' },
+	{ ns : 'win32', sep : '\\' },
 ] as const;
 
 const dirPath  = 'TEST:/dirPath';
@@ -487,7 +487,7 @@ describe('src/lib/fs', () => {
 			link : jest.fn(),
 		};
 
-		separators.filter(({ recurseEnabled }) => recurseEnabled).map(({ ns, sep }) => {
+		separators.map(({ ns, sep }) => {
 			const recurse      = ns ? fs[ns].recurse : fs.recurse;
 			const describeSpec = [ 'fs', ns ].filter((s) => s).join('.');
 
@@ -526,122 +526,141 @@ describe('src/lib/fs', () => {
 
 			describe(describeSpec, () => {
 				describe('recurse', () => {
-					it('should do nothing if root does not exist', () => {
-						recurse(`TEST:${sep}wrong${sep}path`, callbacks.file);
+					// fs supports backslash separators only in win32
+					if (sep === '\\' && process.platform !== 'win32') {
+						it('should not find files in path separated by backslashes in non-win32 systems', () => {
+							recurse(`TEST:${sep}ProgramData`, callbacks.file);
+							recurse(`TEST:${sep}ProgramData`, callbacks);
 
-						expect(callbacks.file).not.toHaveBeenCalled();
-						expect(readdirSyncSpy).not.toHaveBeenCalled();
-					});
+							expect(callbacks.file).not.toHaveBeenCalled();
+							expect(readdirSyncSpy).not.toHaveBeenCalled();
+						});
+					} else {
+						it('should find files in path separated by slashes or in win32 systems', () => {
+							recurse(`TEST:${sep}ProgramData`, callbacks.file);
+							recurse(`TEST:${sep}ProgramData`, callbacks);
 
-					it('should recursively apply the only callback to all nested entities except itself', () => {
-						recurse(`TEST:${sep}ProgramData`, callbacks.file);
+							expect(callbacks.file).toHaveBeenCalled();
+							expect(readdirSyncSpy).toHaveBeenCalled();
+						});
 
-						expect(callbacks.file).toHaveBeenCalledTimes(4);
-						expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}Desktop`, 'Desktop', expect.anything());
-						expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware`, 'MySoftware', expect.anything());
-						expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware${sep}errors.log`, 'errors.log', expect.anything());
-						expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware${sep}profile.dat`, 'profile.dat', expect.anything());
-					});
+						it('should do nothing if root does not exist', () => {
+							recurse(`TEST:${sep}wrong${sep}path`, callbacks.file);
 
-					it('should not apply callback to itself', () => {
-						recurse(`TEST:${sep}ProgramData`, callbacks.file);
+							expect(callbacks.file).not.toHaveBeenCalled();
+							expect(readdirSyncSpy).not.toHaveBeenCalled();
+						});
 
-						expect(callbacks.file).not.toHaveBeenCalledWith(`TEST:${sep}ProgramData`, 'ProgramData', expect.anything());
-					});
+						it('should recursively apply the only callback to all nested entities except itself', () => {
+							recurse(`TEST:${sep}ProgramData`, callbacks.file);
 
-					it('should recursively read all nested directories', () => {
-						recurse('TEST:', callbacks.file);
+							expect(callbacks.file).toHaveBeenCalledTimes(4);
+							expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}Desktop`, 'Desktop', expect.anything());
+							expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware`, 'MySoftware', expect.anything());
+							expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware${sep}errors.log`, 'errors.log', expect.anything());
+							expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware${sep}profile.dat`, 'profile.dat', expect.anything());
+						});
 
-						expect(readdirSyncSpy).toHaveBeenCalledTimes(7);
-						expect(readdirSyncSpy).toHaveBeenCalledWith('TEST:', { withFileTypes : true });
-						expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}ProgramData`, { withFileTypes : true });
-						expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware`, { withFileTypes : true });
-						expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}Users`, { withFileTypes : true });
-						expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}Users${sep}Public`, { withFileTypes : true });
-						expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}Users${sep}Public${sep}Desktop`, { withFileTypes : true });
-						expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}Users${sep}Public${sep}Downloads`, { withFileTypes : true });
-					});
+						it('should not apply callback to itself', () => {
+							recurse(`TEST:${sep}ProgramData`, callbacks.file);
 
-					it('should not process System Volume Information', () => {
-						recurse('TEST:', callbacks.file);
+							expect(callbacks.file).not.toHaveBeenCalledWith(`TEST:${sep}ProgramData`, 'ProgramData', expect.anything());
+						});
 
-						expect(readdirSyncSpy).not.toHaveBeenCalledWith(`TEST:${sep}System Volume Information`);
-					});
+						it('should recursively read all nested directories', () => {
+							recurse('TEST:', callbacks.file);
 
-					it('should recursively apply callbacks of each type', () => {
-						recurse(`TEST:${sep}ProgramData`, callbacks);
+							expect(readdirSyncSpy).toHaveBeenCalledTimes(7);
+							expect(readdirSyncSpy).toHaveBeenCalledWith('TEST:', { withFileTypes : true });
+							expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}ProgramData`, { withFileTypes : true });
+							expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware`, { withFileTypes : true });
+							expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}Users`, { withFileTypes : true });
+							expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}Users${sep}Public`, { withFileTypes : true });
+							expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}Users${sep}Public${sep}Desktop`, { withFileTypes : true });
+							expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}Users${sep}Public${sep}Downloads`, { withFileTypes : true });
+						});
 
-						expect(callbacks.dir).toHaveBeenCalledTimes(1);
-						expect(callbacks.dir).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware`, 'MySoftware', expect.anything());
+						it('should not process System Volume Information', () => {
+							recurse('TEST:', callbacks.file);
 
-						expect(callbacks.link).toHaveBeenCalledTimes(1);
-						expect(callbacks.link).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}Desktop`, 'Desktop', expect.anything());
+							expect(readdirSyncSpy).not.toHaveBeenCalledWith(`TEST:${sep}System Volume Information`);
+						});
 
-						expect(callbacks.file).toHaveBeenCalledTimes(2);
-						expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware${sep}errors.log`, 'errors.log', expect.anything());
-						expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware${sep}profile.dat`, 'profile.dat', expect.anything());
-					});
+						it('should recursively apply callbacks of each type', () => {
+							recurse(`TEST:${sep}ProgramData`, callbacks);
 
-					it('should not apply callbacks of non-existing types', () => {
-						recurse(`TEST:${sep}Users${sep}Public`, callbacks);
+							expect(callbacks.dir).toHaveBeenCalledTimes(1);
+							expect(callbacks.dir).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware`, 'MySoftware', expect.anything());
 
-						expect(callbacks.dir).toHaveBeenCalled();
-						expect(callbacks.file).toHaveBeenCalled();
-						expect(callbacks.link).not.toHaveBeenCalled();
-					});
+							expect(callbacks.link).toHaveBeenCalledTimes(1);
+							expect(callbacks.link).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}Desktop`, 'Desktop', expect.anything());
 
-					it('should not apply any callbacks if no any nested entities', () => {
-						recurse(`TEST:${sep}Users${sep}Public${sep}Desktop`, callbacks);
+							expect(callbacks.file).toHaveBeenCalledTimes(2);
+							expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware${sep}errors.log`, 'errors.log', expect.anything());
+							expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware${sep}profile.dat`, 'profile.dat', expect.anything());
+						});
 
-						expect(callbacks.dir).not.toHaveBeenCalled();
-						expect(callbacks.file).not.toHaveBeenCalled();
-						expect(callbacks.link).not.toHaveBeenCalled();
-					});
+						it('should not apply callbacks of non-existing types', () => {
+							recurse(`TEST:${sep}Users${sep}Public`, callbacks);
 
-					it('should limit entities to current level if depth is 1', () => {
-						recurse(`TEST:${sep}Users`, callbacks, { depth : 1 });
+							expect(callbacks.dir).toHaveBeenCalled();
+							expect(callbacks.file).toHaveBeenCalled();
+							expect(callbacks.link).not.toHaveBeenCalled();
+						});
 
-						expect(readdirSyncSpy).toHaveBeenCalledTimes(1);
-						expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}Users`, { withFileTypes : true });
+						it('should not apply any callbacks if no any nested entities', () => {
+							recurse(`TEST:${sep}Users${sep}Public${sep}Desktop`, callbacks);
 
-						expect(callbacks.dir).toHaveBeenCalledTimes(1);
-						expect(callbacks.dir).toHaveBeenCalledWith(`TEST:${sep}Users${sep}Public`, 'Public', expect.anything());
+							expect(callbacks.dir).not.toHaveBeenCalled();
+							expect(callbacks.file).not.toHaveBeenCalled();
+							expect(callbacks.link).not.toHaveBeenCalled();
+						});
 
-						expect(callbacks.file).not.toHaveBeenCalled();
+						it('should limit entities to current level if depth is 1', () => {
+							recurse(`TEST:${sep}Users`, callbacks, { depth : 1 });
 
-						expect(callbacks.link).toHaveBeenCalledTimes(1);
-						expect(callbacks.link).toHaveBeenCalledWith(`TEST:${sep}Users${sep}AllUsers`, 'AllUsers', expect.anything());
-					});
+							expect(readdirSyncSpy).toHaveBeenCalledTimes(1);
+							expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}Users`, { withFileTypes : true });
 
-					it('should limit entities to specified level if depth is positive number', () => {
-						recurse('TEST:', callbacks, { depth : 2 });
+							expect(callbacks.dir).toHaveBeenCalledTimes(1);
+							expect(callbacks.dir).toHaveBeenCalledWith(`TEST:${sep}Users${sep}Public`, 'Public', expect.anything());
 
-						expect(readdirSyncSpy).toHaveBeenCalledTimes(3);
-						expect(readdirSyncSpy).toHaveBeenCalledWith('TEST:', { withFileTypes : true });
-						expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}ProgramData`, { withFileTypes : true });
-						expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}Users`, { withFileTypes : true });
+							expect(callbacks.file).not.toHaveBeenCalled();
 
-						expect(callbacks.dir).toHaveBeenCalledTimes(4);
-						expect(callbacks.dir).toHaveBeenCalledWith(`TEST:${sep}ProgramData`, 'ProgramData', expect.anything());
-						expect(callbacks.dir).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware`, 'MySoftware', expect.anything());
-						expect(callbacks.dir).toHaveBeenCalledWith(`TEST:${sep}Users`, 'Users', expect.anything());
-						expect(callbacks.dir).toHaveBeenCalledWith(`TEST:${sep}Users${sep}Public`, 'Public', expect.anything());
+							expect(callbacks.link).toHaveBeenCalledTimes(1);
+							expect(callbacks.link).toHaveBeenCalledWith(`TEST:${sep}Users${sep}AllUsers`, 'AllUsers', expect.anything());
+						});
 
-						expect(callbacks.file).toHaveBeenCalledTimes(1);
-						expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}pagefile.sys`, 'pagefile.sys', expect.anything());
+						it('should limit entities to specified level if depth is positive number', () => {
+							recurse('TEST:', callbacks, { depth : 2 });
 
-						expect(callbacks.link).toHaveBeenCalledTimes(3);
-						expect(callbacks.link).toHaveBeenCalledWith(`TEST:${sep}Documents and Settings`, 'Documents and Settings', expect.anything());
-						expect(callbacks.link).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}Desktop`, 'Desktop', expect.anything());
-					});
+							expect(readdirSyncSpy).toHaveBeenCalledTimes(3);
+							expect(readdirSyncSpy).toHaveBeenCalledWith('TEST:', { withFileTypes : true });
+							expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}ProgramData`, { withFileTypes : true });
+							expect(readdirSyncSpy).toHaveBeenCalledWith(`TEST:${sep}Users`, { withFileTypes : true });
 
-					it('should limit entities to specified extension', () => {
-						recurse('TEST:', callbacks, { ext : '.dat' });
+							expect(callbacks.dir).toHaveBeenCalledTimes(4);
+							expect(callbacks.dir).toHaveBeenCalledWith(`TEST:${sep}ProgramData`, 'ProgramData', expect.anything());
+							expect(callbacks.dir).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware`, 'MySoftware', expect.anything());
+							expect(callbacks.dir).toHaveBeenCalledWith(`TEST:${sep}Users`, 'Users', expect.anything());
+							expect(callbacks.dir).toHaveBeenCalledWith(`TEST:${sep}Users${sep}Public`, 'Public', expect.anything());
 
-						expect(callbacks.file).toHaveBeenCalledTimes(2);
-						expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware${sep}profile.dat`, 'profile.dat', expect.anything());
-						expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}Users${sep}Public${sep}ntuser.dat`, 'ntuser.dat', expect.anything());
-					});
+							expect(callbacks.file).toHaveBeenCalledTimes(1);
+							expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}pagefile.sys`, 'pagefile.sys', expect.anything());
+
+							expect(callbacks.link).toHaveBeenCalledTimes(3);
+							expect(callbacks.link).toHaveBeenCalledWith(`TEST:${sep}Documents and Settings`, 'Documents and Settings', expect.anything());
+							expect(callbacks.link).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}Desktop`, 'Desktop', expect.anything());
+						});
+
+						it('should limit entities to specified extension', () => {
+							recurse('TEST:', callbacks, { ext : '.dat' });
+
+							expect(callbacks.file).toHaveBeenCalledTimes(2);
+							expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}ProgramData${sep}MySoftware${sep}profile.dat`, 'profile.dat', expect.anything());
+							expect(callbacks.file).toHaveBeenCalledWith(`TEST:${sep}Users${sep}Public${sep}ntuser.dat`, 'ntuser.dat', expect.anything());
+						});
+					}
 				});
 
 				if (!ns) {
