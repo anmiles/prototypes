@@ -10,9 +10,9 @@ const readFileSyncSpy  = jest.spyOn(fs, 'readFileSync');
 const writeFileSyncSpy = jest.spyOn(fs, 'writeFileSync');
 
 const separators = [
-	{ ns : 'posix', sep : '/' },
-	{ ns : 'win32', sep : '\\' },
-	{ ns : null, sep : path.sep },
+	{ ns : 'posix', sep : '/', recurseEnabled : true },
+	{ ns : 'win32', sep : '\\', recurseEnabled : process.platform === 'win32' },
+	{ ns : null, sep : path.sep, recurseEnabled : true },
 ] as const;
 
 const dirPath  = 'TEST:/dirPath';
@@ -487,7 +487,7 @@ describe('src/lib/fs', () => {
 			link : jest.fn(),
 		};
 
-		separators.map(({ ns, sep }) => {
+		separators.filter(({ recurseEnabled }) => recurseEnabled).map(({ ns, sep }) => {
 			const recurse      = ns ? fs[ns].recurse : fs.recurse;
 			const describeSpec = [ 'fs', ns ].filter((s) => s).join('.');
 
