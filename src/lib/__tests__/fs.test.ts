@@ -136,6 +136,17 @@ describe('src/lib/fs', () => {
 			expect(writeFileSyncSpy).toHaveBeenCalledWith(filePath, '\ufeff{\n    "key1": "value",\n    "key2": 5\n}');
 		});
 
+		it('should call ensureDir to ensure parent dir', () => {
+			const ensureDirSpy = jest.spyOn(fs, 'ensureDir');
+			const json         = { key1 : 'value', key2 : 5 };
+
+			fs.writeJSON(filePath, json);
+
+			expect(ensureDirSpy).toHaveBeenCalledWith(dirPath, { create : true });
+
+			ensureDirSpy.mockRestore();
+		});
+
 		it('should read written json back', () => {
 			const json = { key1 : 'value', key2 : 5 };
 
@@ -445,6 +456,17 @@ describe('src/lib/fs', () => {
 			fs.writeTSV(filePath, data);
 
 			expect(writeFileSyncSpy).toHaveBeenCalledWith(filePath, iconv.encode('first name\tage\tdescription\r\nAlice\t25\tEntertainer\r\nJohn\t40\tSpecial guest', 'cp1251'));
+		});
+
+		it('should call ensureDir to ensure parent dir', () => {
+			const ensureDirSpy                    = jest.spyOn(fs, 'ensureDir');
+			const data: Record<string, unknown>[] = [];
+
+			fs.writeTSV(filePath, data);
+
+			expect(ensureDirSpy).toHaveBeenCalledWith(dirPath, { create : true });
+
+			ensureDirSpy.mockRestore();
 		});
 
 		it('should write empty buffer into file if no data', () => {

@@ -195,6 +195,7 @@ fs.readJSON = fsPromises.readJSON = function<T = unknown>(filename: string): T {
 };
 
 fs.writeJSON = fsPromises.writeJSON = function<T = unknown>(filename: string, json: T): void {
+	fs.ensureDir(path.dirname(filename), { create : true });
 	fs.writeFileSync(filename, `\ufeff${JSON.stringify(json, null, '    ')}`);
 };
 
@@ -288,6 +289,7 @@ fs.writeTSV = fsPromises.writeTSV = function writeTSV(filename: string, data: Ar
 		tsv = lines.map((line) => line.join('\t')).join('\r\n');
 	}
 
+	fs.ensureDir(path.dirname(filename), { create : true });
 	fs.writeFileSync(filename, iconv.encode(tsv, 'cp1251'));
 };
 
