@@ -21,8 +21,8 @@ Provides prototype extensions for native JS modules
 - `String.prototype.htmlEscape` - escape HTML-sensitive string
 - `String.prototype.urlEscape` - escape string to make it URL-safe
 - `String.prototype.regexEscape` - escape regular expression
-- `String.prototype.beautify` - unifies similar special symbols
-- `String.prototype.toFilename` - converts string into a valid filename
+- `String.prototype.beautify` - unify similar special symbols
+- `String.prototype.toFilename` - convert string into a valid filename
 
 ### Array
 

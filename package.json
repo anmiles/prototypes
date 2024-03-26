@@ -30,14 +30,14 @@
 		"iconv-lite": "^0.6.3"
 	},
 	"devDependencies": {
-		"@anmiles/eslint-config": "^7.1.1",
-		"@anmiles/tsconfig": "^3.0.1",
+		"@anmiles/eslint-config": "^7.1.2",
+		"@anmiles/tsconfig": "^3.0.2",
 		"@stylistic/eslint-plugin": "^1.7.0",
 		"@types/event-emitter": "^0.3.5",
 		"@types/jest": "^29.5.12",
 		"@types/mock-fs": "^4.13.4",
-		"@typescript-eslint/eslint-plugin": "^7.3.1",
-		"@typescript-eslint/parser": "^7.3.1",
+		"@typescript-eslint/eslint-plugin": "^7.4.0",
+		"@typescript-eslint/parser": "^7.4.0",
 		"eslint": "^8.57.0",
 		"eslint-import-resolver-typescript": "^3.6.1",
 		"eslint-plugin-align-assignments": "^1.1.2",
