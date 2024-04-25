@@ -1,7 +1,7 @@
 import '../process';
 import type path from 'path';
 import childProcess from 'child_process';
-import emitter from 'event-emitter';
+import EventEmitter from 'events';
 
 const pathOriginal = jest.requireActual<typeof path>('path');
 jest.mock<Partial<typeof path>>('path', () => ({
@@ -21,14 +21,14 @@ const stdout = jest.fn();
 const stderr = jest.fn();
 
 function spawn(): childProcess.ChildProcess {
-	const instance = emitter() as ReturnType<typeof childProcess.spawn>;
+	const instance = new EventEmitter() as ReturnType<typeof childProcess.spawn>;
 
 	if (hasStdout) {
-		instance.stdout = emitter() as ReturnType<typeof childProcess.spawn>['stdout'];
+		instance.stdout = new EventEmitter() as ReturnType<typeof childProcess.spawn>['stdout'];
 	}
 
 	if (hasStderr) {
-		instance.stderr = emitter() as ReturnType<typeof childProcess.spawn>['stderr'];
+		instance.stderr = new EventEmitter() as ReturnType<typeof childProcess.spawn>['stderr'];
 	}
 
 	return spawned = instance;
