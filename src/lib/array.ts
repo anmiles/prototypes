@@ -106,8 +106,7 @@ type OriginalSort<T> = (this: Array<T>, compareFn?: (a: T, b: T) => number) => T
 		return value;
 	}
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- return `any` values to let them being compared
-	function applyOptions(val: unknown, options?: { ignoreCase? : boolean; find? : string; replace? : string }): any {
+	function applyOptions(val: unknown, options?: { ignoreCase? : boolean; find? : string; replace? : string }): unknown {
 		val = val ?? '';
 
 		if (options?.ignoreCase ?? options?.find) {
@@ -129,6 +128,18 @@ type OriginalSort<T> = (this: Array<T>, compareFn?: (a: T, b: T) => number) => T
 		} else {
 			return val;
 		}
+	}
+
+	function normalize([ val1, val2 ]: [unknown, unknown]): [number, number] | [string, string] {
+		if (typeof val1 === 'number' && typeof val2 === 'number') {
+			return [ val1, val2 ];
+		}
+
+		if ((typeof val1 === 'number' || typeof val1 === 'string') && (typeof val2 === 'number' || typeof val2 === 'string')) {
+			return [ val1.toString(), val2.toString() ];
+		}
+
+		return [ JSON.stringify(val1), JSON.stringify(val2) ];
 	}
 
 	function sort(this: Array<T>, compareFn?: ((a: T, b: T) => number) | undefined): Array<T>;
@@ -167,15 +178,16 @@ type OriginalSort<T> = (this: Array<T>, compareFn?: (a: T, b: T) => number) => T
 			for (const field in arg) {
 				const direction = arg[field];
 
-				/* eslint-disable @typescript-eslint/no-unsafe-assignment -- return `any` values to let them being compared */
 				const val1 = applyOptions(getObjectField(item1, field), options);
 				const val2 = applyOptions(getObjectField(item2, field), options);
 
-				if (val2 < val1) {
+				const [ n1, n2 ] = normalize([ val1, val2 ]);
+
+				if (n2 < n1) {
 					return direction ? 1 : -1;
 				}
 
-				if (val2 > val1) {
+				if (n2 > n1) {
 					return direction ? -1 : 1;
 				}
 			}

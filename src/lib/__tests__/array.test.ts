@@ -110,6 +110,20 @@ describe('src/lib/array', () => {
 			]);
 		});
 
+		it('should sort array of objects by stringified field if it points to an object-like property', () => {
+			expect([
+				{ a : 4, b : { c : 2 } },
+				{ a : 2, b : { c : 4 } },
+				{ a : 3, b : { c : 4 } },
+				{ a : 2, b : { c : 2 } },
+			].sort('b')).toEqual([
+				{ a : 4, b : { c : 2 } },
+				{ a : 2, b : { c : 2 } },
+				{ a : 2, b : { c : 4 } },
+				{ a : 3, b : { c : 4 } },
+			]);
+		});
+
 		it('should treat dot-containing path as field name if it exists', () => {
 			expect([
 				{ 'a' : 4, 'b.c' : 2 },
