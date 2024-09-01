@@ -31,6 +31,8 @@ Provides prototype extensions for native JS modules
 - `Array.prototype.indexFieldOf` - indexOf by value of nested key
 - `Array.prototype.sum` - sum all values in array
 - `Array.prototype.sort` - sort array by values of nested keys in various directions
+- `Array.prototype.forEachAsync` - asynchronous version of Array.prototype.forEach
+- `Array.prototype.mapAsync` - asynchronous version of Array.prototype.map
 
 ### Object
 

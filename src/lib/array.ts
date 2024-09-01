@@ -8,6 +8,8 @@ declare global {
 		sort(this: Array<T>, direction: boolean, options?: { ignoreCase? : boolean; find? : string; replace? : string }): Array<T>;
 		sort(this: Array<T>, field: string, options?: { ignoreCase? : boolean; find? : string; replace? : string }): Array<T>;
 		sort(this: Array<T>, fields: Record<string, boolean> | string[], options?: { ignoreCase? : boolean; find? : string; replace? : string }): Array<T>;
+		forEachAsync(this: Array<T>, func: (item: T, index?: number, array?: T[]) => Promise<void>): Promise<void>;
+		mapAsync<T2>(this: Array<T>, func: (item: T, index?: number, array?: T[]) => Promise<T2>): Promise<Array<T2>>;
 	}
 }
 
@@ -199,5 +201,21 @@ type OriginalSort<T> = (this: Array<T>, compareFn?: (a: T, b: T) => number) => T
 	Array.prototype.sort = sort;
 // eslint-disable-next-line @typescript-eslint/unbound-method -- change the prototype
 })(Array.prototype.sort);
+
+Array.prototype.forEachAsync = async function forEachAsync<T>(this: Array<T>, func: (item: T, index?: number, array?: T[]) => Promise<void>): Promise<void> {
+	for (let index = 0; index < this.length; index++) {
+		await func(this[index]!, index, this);
+	}
+};
+
+Array.prototype.mapAsync = async function mapAsync<T, T2>(this: Array<T>, func: (item: T, index?: number, array?: T[]) => Promise<T2>): Promise<Array<T2>> {
+	const result: Array<T2> = [];
+
+	for (let index = 0; index < this.length; index++) {
+		result.push(await func(this[index]!, index, this));
+	}
+
+	return result;
+};
 
 export {};

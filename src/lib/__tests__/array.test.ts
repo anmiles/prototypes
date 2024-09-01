@@ -346,4 +346,47 @@ describe('src/lib/array', () => {
 			].sort({ b : false, a : true }, { find : 'a', replace : 'c' })).toThrow(new Error('Cannot use \'ignoreCase\' or \'find\' options on non-string value: 2'));
 		});
 	});
+
+	describe('forEachAsync', () => {
+		it('should asynchronously iterate an array with applying asynchronous callback function to each item', async () => {
+			const array = [
+				{ value : 1 },
+				{ value : 2 },
+				{ value : 3 },
+			];
+
+			const spy = jest.fn();
+
+			const func = async (item: { value : number }): Promise<void> => new Promise((resolve) => {
+				setTimeout(() => {
+					spy(item.value);
+					resolve();
+				}, 0);
+			});
+
+			await array.forEachAsync(func);
+
+			expect(spy.mock.calls).toEqual([ [ 1 ], [ 2 ], [ 3 ] ]);
+		});
+	});
+
+	describe('mapAsync', () => {
+		it('should asynchronously iterate an array with applying asynchronous callback function to each item and return array of applied items', async () => {
+			const array = [
+				{ value : 1 },
+				{ value : 2 },
+				{ value : 3 },
+			];
+
+			const func = async (item: { value : number }): Promise<string> => new Promise((resolve) => {
+				setTimeout(() => {
+					resolve(String(item.value));
+				}, 0);
+			});
+
+			const result = await array.mapAsync(func);
+
+			expect(result).toEqual([ '1', '2', '3' ]);
+		});
+	});
 });

@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [10.1.0](../../tags/v10.1.0) - 2024-09-01
+### Added
+- `Array.prototype.forEachAsync` to execute Array.prototype.forEach asynchronously
+- `Array.prototype.map` to execute Array.prototype.map asynchronously
+
 ## [10.0.6](../../tags/v10.0.6) - 2024-05-25
 ### Changed
 - Fix types in array.ts
