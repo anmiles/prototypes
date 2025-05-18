@@ -64,17 +64,13 @@ Path separator is explicitly specified and cannot be directly passed there.
 - `fs.win32.joinPath` and `fs.win32.recurse` use '\\' separator regardless of path.sep in runtime
 Inspired by `path.posix` and `path.win32`.
 
-### process
-
-- `process.start` - run process in Windows environment and optionally output stdout/stderr or process them with custom functions
-
 ## Useful strings for testing purposes:
 
 - string value
-  - ``begin  .-'`"~!@#$%^&*?:;,_=+/\|()[]{}<>&nbsp;&lt;&gt;%27²½áßÈіíž©§€₤∑א雨https://A-_/?b[c]&(1)end``
+	- ``begin  .-'`"~!@#$%^&*?:;,_=+/\|()[]{}<>&nbsp;&lt;&gt;%27²½áßÈіíž©§€₤∑א雨https://A-_/?b[c]&(1)end``
 - query string value
-  - ``begin .-'`"~!@$%^*:;,_=+\|()[]{}<>%27²½áßÈіíž©§€₤∑א雨https://A-_/b[c](1)end``
+	- ``begin .-'`"~!@$%^*:;,_=+\|()[]{}<>%27²½áßÈіíž©§€₤∑א雨https://A-_/b[c](1)end``
 - url
-  - ``https://example.com/begin.-'`"~!@#$%^&*?:;,_=+/\|()[]{}<>&nbsp;&lt;&gt;%27²½áßÈіíž©§€₤∑א雨end``
+	- ``https://example.com/begin.-'`"~!@#$%^&*?:;,_=+/\|()[]{}<>&nbsp;&lt;&gt;%27²½áßÈіíž©§€₤∑א雨end``
 - email
-  - ``test.-'`~!#$%^&*?_=+/|{}&nbsp&lt&gt%27іž€₤∑א雨@example.com``
+	- ``test.-'`~!#$%^&*?_=+/|{}&nbsp&lt&gt%27іž€₤∑א雨@example.com``

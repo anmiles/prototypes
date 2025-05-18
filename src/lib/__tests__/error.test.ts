@@ -51,7 +51,7 @@ describe('src/lib/error', () => {
 		});
 
 		it('should return property "message" if argument is an object and has that property', () => {
-			const arg           = { message : 'test error' };
+			const arg           = { message: 'test error' };
 			const expectedError = new Error('test error');
 
 			const error = Error.parse(arg);
@@ -59,7 +59,7 @@ describe('src/lib/error', () => {
 		});
 
 		it('should return property "error" if argument is an object and has that property', () => {
-			const arg           = { error : 'test error' };
+			const arg           = { error: 'test error' };
 			const expectedError = new Error('test error');
 
 			const error = Error.parse(arg);
@@ -67,7 +67,7 @@ describe('src/lib/error', () => {
 		});
 
 		it('should return stringified JSON if argument is an object', () => {
-			const arg           = { key : 'value' };
+			const arg           = { key: 'value' };
 			const expectedError = new Error('{"key":"value"}');
 
 			const error = Error.parse(arg);
@@ -75,7 +75,7 @@ describe('src/lib/error', () => {
 		});
 
 		it('should return stringified JSON if argument is an object with a non-string property "message"', () => {
-			const arg           = { message : 10 };
+			const arg           = { message: 10 };
 			const expectedError = new Error('{"message":10}');
 
 			const error = Error.parse(arg);
@@ -83,7 +83,7 @@ describe('src/lib/error', () => {
 		});
 
 		it('should return stringified JSON if argument is an object with a non-string property "error"', () => {
-			const arg           = { error : true };
+			const arg           = { error: true };
 			const expectedError = new Error('{"error":true}');
 
 			const error = Error.parse(arg);
