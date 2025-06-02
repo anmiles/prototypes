@@ -33,6 +33,7 @@ Provides prototype extensions for native JS modules
 - `Array.prototype.sort` - sort array by values of nested keys in various directions
 - `Array.prototype.forEachAsync` - asynchronous version of Array.prototype.forEach
 - `Array.prototype.mapAsync` - asynchronous version of Array.prototype.map
+- `Array.prototype.toTuple` - cast array to the tuple with fixed amount of elements
 
 ### Object
 

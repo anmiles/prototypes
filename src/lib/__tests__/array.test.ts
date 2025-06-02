@@ -396,4 +396,27 @@ describe('src/lib/array', () => {
 			expect(result).toEqual([ '1', '2', '3' ]);
 		});
 	});
+
+	describe('toTuple', () => {
+		it('should return tuple that equals to array if array length is expected', () => {
+			const array = [
+				{ value: 1 },
+				{ value: 2 },
+				{ value: 3 },
+			];
+
+			const tuple = array.toTuple(3);
+
+			expect(tuple).toEqual(array);
+		});
+		it('should throw if array length is not expected', () => {
+			const array = [
+				{ value: 1 },
+				{ value: 2 },
+				{ value: 3 },
+			];
+
+			expect(() => array.toTuple(2)).toThrow(new Error('Expected array to have length 2 in order to be casted to the tuple, but received length 3'));
+		});
+	});
 });

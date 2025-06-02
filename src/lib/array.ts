@@ -1,3 +1,5 @@
+type Tuple<T, N extends number, R extends T[] = []> = R['length'] extends N ? R : Tuple<T, N, [...R, T]>;
+
 declare global {
 	interface Array<T> {
 		unique(this: Array<T>): Array<T>;
@@ -10,6 +12,7 @@ declare global {
 		sort(this: Array<T>, fields: Record<string, boolean> | string[], options?: { ignoreCase?: boolean; find?: string; replace?: string }): Array<T>;
 		forEachAsync(this: Array<T>, func: (item: T, index: number, array: T[])=> Promise<void>): Promise<void>;
 		mapAsync<T2>(this: Array<T>, func: (item: T, index: number, array: T[])=> Promise<T2>): Promise<Array<T2>>;
+		toTuple<T, N extends number>(this: Array<T>, length: N): Tuple<T, N>;
 	}
 }
 
@@ -215,6 +218,14 @@ Array.prototype.mapAsync = async function mapAsync<T, T2>(this: Array<T>, func: 
 	}
 
 	return result;
+};
+
+Array.prototype.toTuple = function toTuple<T, N extends number>(this: Array<T>, length: N): Tuple<T, N> {
+	if (this.length !== length) {
+		throw new Error(`Expected array to have length ${length} in order to be casted to the tuple, but received length ${this.length}`);
+	}
+
+	return this as Tuple<T, N>; // eslint-disable-line @typescript-eslint/no-unsafe-type-assertion
 };
 
 export {};
