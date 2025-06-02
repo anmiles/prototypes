@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [11.0.1](../../tags/v11.0.1) - 2025-06-02
 ### Changed
-- Fixed arguments of Array.forEachAsync that were optional by mistake
+- Fixed arguments of `Array.prototype.forEachAsync` that were optional by mistake
 
 ## [11.0.0](../../tags/v11.0.0) - 2025-05-18
 __(BREAKING) Dropped support for NodeJS 18 (EOL). Minimum required version is now NodeJS 20.__
