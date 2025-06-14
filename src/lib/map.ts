@@ -21,4 +21,3 @@ Map.prototype.getOrCreate = function getOrCreate<K, V>(this: Map<K, V>, key: K, 
 };
 
 export {};
-
