@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [11.2.0](../../tags/v11.2.0) - 2025-06-14
+### Added
+- `Map.prototype.forEachAsync` - asynchronous version of Map.prototype.forEach
+- `Map.prototype.getOrCreate` - to get value by key or create if not exists
+
 ## [11.1.0](../../tags/v11.1.0) - 2025-06-02
 ### Added
 - `Array.prototype.toTuple` - to cast array to the tuple with fixed amount of elements
