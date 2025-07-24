@@ -333,6 +333,7 @@ function recurse<T extends string, TSep extends typeof path.sep>(
 			continue;
 		}
 
+		/* istanbul ignore else - skip cases: isBlockDevice(), isCharacterDevice(), isFIFO(), isSocket() */
 		if (dirent.isDirectory()) {
 			arg.dir && arg.dir(fullName, dirent.name, dirent);
 

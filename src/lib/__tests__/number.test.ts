@@ -35,14 +35,16 @@ describe('src/lib/number', () => {
 
 	describe('pad', () => {
 		it("should add zeros to the left part until it's length is equal required", () => {
+			expect((100).pad(5)).toEqual('00100');
 			expect(100.5.pad(5)).toEqual('00100.5');
 		});
 
 		it("should add zeros to the right part until it's length is equal required", () => {
+			expect((100).pad(0, 3)).toEqual('100.000');
 			expect(100.5.pad(0, 3)).toEqual('100.500');
 		});
 
-		it('should turn integer into float if right zeros are required', () => {
+		it('should turn an integer into a float if right zeros are required', () => {
 			expect((100).pad(4, 3)).toEqual('0100.000');
 		});
 	});
