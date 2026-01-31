@@ -13,14 +13,14 @@ declare module 'fs' {
 
 	export function getJSON<T = unknown>(
 		filename: string,
-		createCallback: ()=> Exclude<T, Promise<unknown>>,
-		validateCallback?: (json: T)=> { isValid: boolean; validationError?: string }
+		createCallback: () => Exclude<T, Promise<unknown>>,
+		validateCallback?: (json: T) => { isValid: boolean; validationError?: string },
 	): T;
 
 	export function getJSONAsync<T = unknown>(
 		filename: string,
-		createCallback: ()=> Promise<T>,
-		validateCallback?: (json: T)=> Promise<{ isValid: boolean; validationError?: string }>
+		createCallback: () => Promise<T>,
+		validateCallback?: (json: T) => Promise<{ isValid: boolean; validationError?: string }>,
 	): Promise<T>;
 
 	export function readTSV(filename: string): Array<Record<string, unknown>>;
@@ -35,12 +35,12 @@ declare module 'fs' {
 	export function recurse<T extends string, TSep extends typeof path.sep = typeof path.sep>(
 		root: T,
 		callback: RecurseCallback<T, TSep>,
-		options?: { depth?: number; ext?: string; sep?: TSep }
+		options?: { depth?: number; ext?: string; sep?: TSep },
 	): void;
 	export function recurse<T extends string, TSep extends typeof path.sep = typeof path.sep>(
 		root: T,
 		callbacks: { dir?: RecurseCallback<T, TSep>; file?: RecurseCallback<T, TSep>; link?: RecurseCallback<T, TSep> },
-		options?: { depth?: number; ext?: string; sep?: TSep }
+		options?: { depth?: number; ext?: string; sep?: TSep },
 	): void;
 
 	export function size(root: string, ignores?: string[]): number;
@@ -51,12 +51,12 @@ declare module 'fs' {
 		export function recurse<T extends string>(
 			root: T,
 			callback: RecurseCallback<T, '/'>,
-			options?: { depth?: number; ext?: string }
+			options?: { depth?: number; ext?: string },
 		): void;
 		export function recurse<T extends string>(
 			root: T,
 			callbacks: { dir?: RecurseCallback<T, '/'>; file?: RecurseCallback<T, '/'>; link?: RecurseCallback<T, '/'> },
-			options?: { depth?: number; ext?: string }
+			options?: { depth?: number; ext?: string },
 		): void;
 	}
 
@@ -66,12 +66,12 @@ declare module 'fs' {
 		export function recurse<T extends string>(
 			root: T,
 			callback: RecurseCallback<T, '\\'>,
-			options?: { depth?: number; ext?: string }
+			options?: { depth?: number; ext?: string },
 		): void;
 		export function recurse<T extends string>(
 			root: T,
 			callbacks: { dir?: RecurseCallback<T, '\\'>; file?: RecurseCallback<T, '\\'>; link?: RecurseCallback<T, '\\'> },
-			options?: { depth?: number; ext?: string }
+			options?: { depth?: number; ext?: string },
 		): void;
 	}
 }
@@ -85,14 +85,14 @@ declare module 'fs/promises' {
 
 	export function getJSON<T = unknown>(
 		filename: string,
-		createCallback: ()=> Exclude<T, Promise<unknown>>,
-		validateCallback?: (json: T)=> { isValid: boolean; validationError?: string }
+		createCallback: () => Exclude<T, Promise<unknown>>,
+		validateCallback?: (json: T) => { isValid: boolean; validationError?: string },
 	): T;
 
 	export function getJSONAsync<T = unknown>(
 		filename: string,
-		createCallback: ()=> Promise<T>,
-		validateCallback?: (json: T)=> Promise<{ isValid: boolean; validationError?: string }>
+		createCallback: () => Promise<T>,
+		validateCallback?: (json: T) => Promise<{ isValid: boolean; validationError?: string }>,
 	): Promise<T>;
 
 	export function readTSV(filename: string): Array<Record<string, unknown>>;
@@ -107,12 +107,12 @@ declare module 'fs/promises' {
 	export function recurse<T extends string, TSep extends typeof path.sep = typeof path.sep>(
 		root: T,
 		callback: RecurseCallback<T, TSep>,
-		options?: { depth?: number; ext?: string; sep?: TSep }
+		options?: { depth?: number; ext?: string; sep?: TSep },
 	): void;
 	export function recurse<T extends string, TSep extends typeof path.sep = typeof path.sep>(
 		root: T,
 		callbacks: { dir?: RecurseCallback<T, TSep>; file?: RecurseCallback<T, TSep>; link?: RecurseCallback<T, TSep> },
-		options?: { depth?: number; ext?: string; sep?: TSep }
+		options?: { depth?: number; ext?: string; sep?: TSep },
 	): void;
 
 	export function size(root: string, ignores?: string[]): number;
@@ -123,12 +123,12 @@ declare module 'fs/promises' {
 		export function recurse<T extends string>(
 			root: T,
 			callback: RecurseCallback<T, '/'>,
-			options?: { depth?: number; ext?: string }
+			options?: { depth?: number; ext?: string },
 		): void;
 		export function recurse<T extends string>(
 			root: T,
 			callbacks: { dir?: RecurseCallback<T, '/'>; file?: RecurseCallback<T, '/'>; link?: RecurseCallback<T, '/'> },
-			options?: { depth?: number; ext?: string }
+			options?: { depth?: number; ext?: string },
 		): void;
 	}
 
@@ -138,12 +138,12 @@ declare module 'fs/promises' {
 		export function recurse<T extends string>(
 			root: T,
 			callback: RecurseCallback<T, '\\'>,
-			options?: { depth?: number; ext?: string }
+			options?: { depth?: number; ext?: string },
 		): void;
 		export function recurse<T extends string>(
 			root: T,
 			callbacks: { dir?: RecurseCallback<T, '\\'>; file?: RecurseCallback<T, '\\'>; link?: RecurseCallback<T, '\\'> },
-			options?: { depth?: number; ext?: string }
+			options?: { depth?: number; ext?: string },
 		): void;
 	}
 }
@@ -199,8 +199,8 @@ fs.writeJSON = fsPromises.writeJSON = function<T = unknown>(filename: string, js
 
 fs.getJSON = fsPromises.getJSON = function<T = unknown>(
 	filename: string,
-	createCallback: ()=> Exclude<T, Promise<unknown>>,
-	validateCallback: (json: T)=> { isValid: boolean; validationError?: string } = () => ({ isValid: true }),
+	createCallback: () => Exclude<T, Promise<unknown>>,
+	validateCallback: (json: T) => { isValid: boolean; validationError?: string } = () => ({ isValid: true }),
 ): T {
 	if (fs.existsSync(filename)) {
 		const json        = fs.readJSON<T>(filename);
@@ -225,8 +225,8 @@ fs.getJSON = fsPromises.getJSON = function<T = unknown>(
 
 fs.getJSONAsync = fsPromises.getJSONAsync = async function<T>(
 	filename: string,
-	createCallback: ()=> Promise<T>,
-	validateCallback: (json: T)=> Promise<{ isValid: boolean; validationError?: string }> = async () => new Promise((resolve) => {
+	createCallback: () => Promise<T>,
+	validateCallback: (json: T) => Promise<{ isValid: boolean; validationError?: string }> = async () => new Promise((resolve) => {
 		resolve({ isValid: true });
 	}),
 ): Promise<T> {
@@ -299,17 +299,17 @@ fs.joinPath = function<
 	return `${parent}${options?.sep ?? path.sep as TSep}${child}`; // eslint-disable-line @typescript-eslint/no-unsafe-type-assertion
 };
 
-type RecurseCallback<T extends string, TSep extends typeof path.sep> = (filepath: `${T}${TSep}${string}`, filename: string, dirent: fs.Dirent)=> void;
+type RecurseCallback<T extends string, TSep extends typeof path.sep> = (filepath: `${T}${TSep}${string}`, filename: string, dirent: fs.Dirent) => void;
 
 function recurse<T extends string, TSep extends typeof path.sep = typeof path.sep>(
 	root: T,
 	callback: RecurseCallback<T, TSep>,
-	options?: { depth?: number; ext?: string; sep?: TSep }
+	options?: { depth?: number; ext?: string; sep?: TSep },
 ): void;
 function recurse<T extends string, TSep extends typeof path.sep = typeof path.sep>(
 	root: T,
 	callbacks: { dir?: RecurseCallback<T, TSep>; file?: RecurseCallback<T, TSep>; link?: RecurseCallback<T, TSep> },
-	options?: { depth?: number; ext?: string; sep?: TSep }
+	options?: { depth?: number; ext?: string; sep?: TSep },
 ): void;
 function recurse<T extends string, TSep extends typeof path.sep>(
 	root: T,
@@ -382,12 +382,12 @@ fs.posix.joinPath = function<T1 extends string, T2 extends string>(parent: T1, c
 function posixRecurse<T extends string>(
 	root: T,
 	callback: RecurseCallback<T, '/'>,
-	options?: { depth?: number; ext?: string }
+	options?: { depth?: number; ext?: string },
 ): void;
 function posixRecurse<T extends string>(
 	root: T,
 	callbacks: { dir?: RecurseCallback<T, '/'>; file?: RecurseCallback<T, '/'>; link?: RecurseCallback<T, '/'> },
-	options?: { depth?: number; ext?: string }
+	options?: { depth?: number; ext?: string },
 ): void;
 function posixRecurse<T extends string>(
 	root: T,
@@ -412,12 +412,12 @@ fs.win32.joinPath = function<T1 extends string, T2 extends string>(parent: T1, c
 function win32Recurse<T extends string>(
 	root: T,
 	callback: RecurseCallback<T, '\\'>,
-	options?: { depth?: number; ext?: string }
+	options?: { depth?: number; ext?: string },
 ): void;
 function win32Recurse<T extends string>(
 	root: T,
 	callbacks: { dir?: RecurseCallback<T, '\\'>; file?: RecurseCallback<T, '\\'>; link?: RecurseCallback<T, '\\'> },
-	options?: { depth?: number; ext?: string }
+	options?: { depth?: number; ext?: string },
 ): void;
 function win32Recurse<T extends string>(
 	root: T,

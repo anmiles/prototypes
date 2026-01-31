@@ -6,12 +6,12 @@ declare global {
 		equals(this: Array<T>, array: Array<T>): boolean;
 		indexFieldOf<T extends Record<string, unknown>>(this: Array<T>, fields: string[] | string, searchTerm: unknown, skip?: number): number;
 		sum<T extends number>(this: Array<T>): number;
-		sort(this: Array<T>, compareFn?: ((a: T, b: T)=> number) | undefined): Array<T>;
+		sort(this: Array<T>, compareFn?: ((a: T, b: T) => number) | undefined): Array<T>;
 		sort(this: Array<T>, direction: boolean, options?: { ignoreCase?: boolean; find?: string; replace?: string }): Array<T>;
 		sort(this: Array<T>, field: string, options?: { ignoreCase?: boolean; find?: string; replace?: string }): Array<T>;
 		sort(this: Array<T>, fields: Record<string, boolean> | string[], options?: { ignoreCase?: boolean; find?: string; replace?: string }): Array<T>;
-		forEachAsync(this: Array<T>, func: (item: T, index: number, array: T[])=> Promise<void>): Promise<void>;
-		mapAsync<T2>(this: Array<T>, func: (item: T, index: number, array: T[])=> Promise<T2>): Promise<Array<T2>>;
+		forEachAsync(this: Array<T>, func: (item: T, index: number, array: T[]) => Promise<void>): Promise<void>;
+		mapAsync<T2>(this: Array<T>, func: (item: T, index: number, array: T[]) => Promise<T2>): Promise<Array<T2>>;
 		toTuple<T, N extends number>(this: Array<T>, length: N): Tuple<T, N>;
 	}
 }
@@ -71,7 +71,7 @@ Array.prototype.sum = function sum<T extends number>(this: Array<T>): number {
 	}, 0);
 };
 
-type OriginalSort<T> = (this: Array<T>, compareFn?: (a: T, b: T)=> number)=> T[];
+type OriginalSort<T> = (this: Array<T>, compareFn?: (a: T, b: T) => number) => T[];
 
 (<T>(originalSort: OriginalSort<T>) => {
 	function isRecord(obj: unknown): obj is Record<string, unknown> {
@@ -147,14 +147,14 @@ type OriginalSort<T> = (this: Array<T>, compareFn?: (a: T, b: T)=> number)=> T[]
 		return [ JSON.stringify(val1), JSON.stringify(val2) ];
 	}
 
-	function sort(this: Array<T>, compareFn?: ((a: T, b: T)=> number) | undefined): Array<T>;
+	function sort(this: Array<T>, compareFn?: ((a: T, b: T) => number) | undefined): Array<T>;
 	function sort(this: Array<T>, direction: boolean, options?: { ignoreCase?: boolean; find?: string; replace?: string }): Array<T>;
 	function sort(this: Array<T>, field: string, options?: { ignoreCase?: boolean; find?: string; replace?: string }): Array<T>;
 	function sort(this: Array<T>, fields: string[], options?: { ignoreCase?: boolean; find?: string; replace?: string }): Array<T>;
 	function sort(this: Array<T>, fields: Record<string, boolean>, options?: { ignoreCase?: boolean; find?: string; replace?: string }): Array<T>;
 	function sort(
 		this: Array<T>,
-		arg: Record<string, boolean> | string[] | boolean | string | ((a: T, b: T)=> number) | undefined,
+		arg: Record<string, boolean> | string[] | boolean | string | ((a: T, b: T) => number) | undefined,
 		options: { ignoreCase?: boolean; find?: string; replace?: string } = {},
 	): Array<T> {
 		if (typeof arg === 'undefined') {
@@ -204,13 +204,13 @@ type OriginalSort<T> = (this: Array<T>, compareFn?: (a: T, b: T)=> number)=> T[]
 	Array.prototype.sort = sort;
 })(Array.prototype.sort);
 
-Array.prototype.forEachAsync = async function forEachAsync<T>(this: Array<T>, func: (item: T, index: number, array: T[])=> Promise<void>): Promise<void> {
+Array.prototype.forEachAsync = async function forEachAsync<T>(this: Array<T>, func: (item: T, index: number, array: T[]) => Promise<void>): Promise<void> {
 	for (let index = 0; index < this.length; index++) {
 		await func(this[index]!, index, this);
 	}
 };
 
-Array.prototype.mapAsync = async function mapAsync<T, T2>(this: Array<T>, func: (item: T, index: number, array: T[])=> Promise<T2>): Promise<Array<T2>> {
+Array.prototype.mapAsync = async function mapAsync<T, T2>(this: Array<T>, func: (item: T, index: number, array: T[]) => Promise<T2>): Promise<Array<T2>> {
 	const result: Array<T2> = [];
 
 	for (let index = 0; index < this.length; index++) {

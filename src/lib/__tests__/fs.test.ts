@@ -374,7 +374,7 @@ describe('src/lib/fs', () => {
 				mockFS({});
 				validateCallbackAsync.mockResolvedValue({ isValid: false });
 
-				await expect(async () => fs.getJSONAsync(filePath, createCallbackAsync, validateCallbackAsync))
+				await expect(fs.getJSONAsync(filePath, createCallbackAsync, validateCallbackAsync))
 					.rejects.toEqual(new Error(`JSON created for ${filePath} is not valid`));
 
 				expect(writeJSONSpy).not.toHaveBeenCalled();
@@ -384,7 +384,7 @@ describe('src/lib/fs', () => {
 				mockFS({});
 				validateCallbackAsync.mockResolvedValue({ isValid: false, validationError: 'validation error' });
 
-				await expect(async () => fs.getJSONAsync(filePath, createCallbackAsync, validateCallbackAsync))
+				await expect(fs.getJSONAsync(filePath, createCallbackAsync, validateCallbackAsync))
 					.rejects.toEqual(new Error(`JSON created for ${filePath} is not valid: validation error`));
 
 				expect(writeJSONSpy).not.toHaveBeenCalled();
